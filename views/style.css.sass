@@ -1,0 +1,71 @@
+body
+  :text-align center
+  :font bold 14px "Helvetica Neue",Arial,sans-serif
+  
+h1#logo
+  :width 382px
+  :height 56px
+  :background transparent url(/public/images/logo.png) no-repeat top left
+  span
+    :display none
+    
+ul#songs
+  :list-style-type none
+  :width 800px
+  :margin 0 auto
+  li
+    :clear both
+    :position relative
+    :height 100px
+    div.play-pause
+      :border solid 1px #000
+      =border-radius 8px
+      :margin 10px
+      :padding 9px
+      :background-color #ffffff
+      :float left
+      div
+        :width 50px
+        :height 50px
+        :background transparent url(/public/images/play_pause.png) no-repeat -50px 0px
+        :cursor pointer
+    a
+      :display block
+      :border solid 1px #000
+      =border-radius 8px
+      :color #000
+      :padding 25px
+      :margin 10px 0
+      :text-decoration none
+      :background-color #ffffff
+      :float left
+    audio
+      :float left
+      :padding 25px
+      :width 25px
+    span.votes
+      :display block
+      :border solid 1px #000
+      =border-radius 8px
+      :color #000
+      :padding 12px 25px
+      :margin 10px
+      :text-decoration none
+      :background-color #ffffff
+      :float left
+      :font-size 36px
+    span.album
+      :font-style italic
+      :font-weight normal
+    div.voted
+      :position absolute
+      :border solid 1px #000
+      =border-radius 8px
+      :background-color #fff
+      :color #000
+      :padding 12px 25px
+      :font-size 11px
+      :font-style italic
+      :font-weight normal
+      :width 200px
+

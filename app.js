@@ -9,7 +9,9 @@ var sys = require('sys'),
 	http = require('express/http'),
 	couchdb = require('couchdb'),
 	client = couchdb.createClient(5984, 'localhost'),
-	db = client.db('fiveoclocksong');
+	db = client.db('tunes');
+
+var dns = require('dns');
 
 App = {
 	/**
@@ -28,7 +30,7 @@ App = {
 	 * @property voteCount
 	 */
 	voteCount: 0,
-	SONG_LIMIT: 3,
+	SONG_LIMIT: 5,
 	boot: function () {
 		var self = this;
 
@@ -162,7 +164,7 @@ App = {
 		this.poll.songs[index].votes++;
 		this.songs[index].votes++;
 		this.updateVoteCountCache();
-		inspect(this.voteCount);
+		//inspect(this.voteCount);
 	}
 };
 
@@ -178,13 +180,16 @@ configure(function () {
 });
 
 get('/', function () {
-	inspect(App.poll);
-	inspect(App.songs);
+	//inspect(App.poll);
+	//inspect(App.songs);
 	this.pass('/vote');
 });
 
 get('/vote', function () {
 	var self = this;
+	dns.reverse(self.socket.remoteAddress, function(err,name){
+		//inspect(name);
+	});
 	self.render('vote.html.haml', {
 		locals: {
 			title: 'Five o\'clock Song',
