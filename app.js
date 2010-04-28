@@ -1,4 +1,5 @@
-require.paths.unshift('lib');
+require.paths.unshift('lib/express/lib');
+require.paths.unshift('lib/node-couchdb/lib');
 require('express');
 require('express/plugins');
 
@@ -22,7 +23,8 @@ App = {
 	 */
 	songs: null,
 	/**
-	 * A cache of the total vote count for the current day's poll
+	 * A cache of the total vote count for the current day's poll, used to
+	 * trigger the response on the long poll request
 	 * @property voteCount
 	 */
 	voteCount: 0,
@@ -49,7 +51,7 @@ App = {
 		var todaysDate = new Date();
 		return (todaysDate.getMonth() + 1) + '/' + todaysDate.getDate() + '/' + todaysDate.getFullYear();
 	},
-	getTodaysPoll: function (hollaback) {
+	getTodaysPoll: function (/* I aint no */ hollaback /* girl */) {
 		var self = this;
 
 		db.view('polls', 'by_date', {limit: 1}, function (error, data) {
