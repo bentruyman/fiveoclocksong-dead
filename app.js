@@ -3,17 +3,31 @@ require.paths.unshift('lib/node-couchdb/lib');
 require('express');
 require('express/plugins');
 
-var sys = require('sys'),
+var dns = require('dns'),
 	events = require('events'),
-	utils = require('express/utils'),
+	sys = require('sys'),
 	http = require('express/http'),
-	couchdb = require('couchdb'),
-	client = couchdb.createClient(5984, 'localhost'),
-	db = client.db('tunes');
-
-var dns = require('dns');
+	utils = require('express/utils'),
+	couchdb = require('couchdb');
 
 App = {
+	/**
+	 * Contains various links to the CouchDB database resources used throughout
+	 * the application
+	 * @property database
+	 */
+	database: {
+		/**
+		 * The CouchDB client
+		 * @property client
+		 */
+		client: null,
+		/**
+		 * The interface into the CouchDB database
+		 * @property link
+		 */
+		link: null
+	},
 	/**
 	 * A cache of the poll object used in the current day's poll
 	 * @property poll
@@ -25,16 +39,36 @@ App = {
 	 */
 	songs: null,
 	/**
+	 * Contains the application configuration settings as specified by the user
+	 * in config/app.js
+	 * @property userConfiguration
+	 */
+	userConfiguration: require('./config/app').configuration,
+	/**
 	 * A cache of the total vote count for the current day's poll, used to
 	 * trigger the response on the long poll request
 	 * @property voteCount
 	 */
 	voteCount: 0,
-	SONG_LIMIT: 5,
+	SONG_LIMIT: null,
 	boot: function () {
-		var self = this;
+		var self = this,
+			uc = self.userConfiguration;
 
-		// Determine if there's a poll already made for today
+		/**
+		 * Establish a connection to the database
+		 */
+		self.database.client = couchdb.createClient(uc.database.port, uc.database.host);
+		self.database.link = self.database.client.db(uc.database.name);
+
+		/**
+		 * User configuration
+		 */
+		self.SONG_LIMIT = uc.songLimit;
+
+		/**
+		 * Determine if there's a poll already made for today
+		 */
 		self.getTodaysPoll(function (poll) {
 			/**
 			 * Save our poll to an application's property that can be used
@@ -45,8 +79,12 @@ App = {
 			self.updateSongCache();
 			self.updateVoteCountCache();
 
-			// Run the Express application
+			/**
+			 * Run the Express application
+			 */
 			run();
+
+			sys.puts('FOCS has booted.');
 		});
 	},
 	getTodaysDate: function () {
@@ -56,7 +94,7 @@ App = {
 	getTodaysPoll: function (/* I aint no */ hollaback /* girl */) {
 		var self = this;
 
-		db.view('polls', 'by_date', {limit: 1}, function (error, data) {
+		self.database.link.view('polls', 'by_date', {limit: 1}, function (error, data) {
 			var result = null,
 				poll;
 
@@ -80,13 +118,13 @@ App = {
 			}
 		});
 	},
-	createTodaysPoll: function (hollaback) {
+	createTodaysPoll: function (/* I aint no */ hollaback /* girl */) {
 		var self = this;
 
 		/**
 		 * Get all songs from database
 		 */
-		db.view('songs', 'by_title', {}, function (error, data) {
+		self.database.link.view('songs', 'by_title', {}, function (error, data) {
 			var poll = {
 					date: self.getTodaysDate(),
 					type: 'poll',
@@ -120,8 +158,8 @@ App = {
 				/**
 				 * Save this carefully crafted poll object into the database
 				 */
-				db.saveDoc(poll, function (error, data) {
-					hollaback.call(this, data);
+				self.database.link.saveDoc(poll, function (error, data) {
+					hollaback.call(this, poll);
 				});
 			}
 		});
@@ -135,7 +173,7 @@ App = {
 		 */
 		self.songs = [];
 		self.poll.songs.forEach(function (item, index) {
-			db.getDoc(item.id, function (error, data) {
+			self.database.link.getDoc(item.id, function (error, data) {
 				self.songs[index] = {
 					item: data,
 					votes: item.votes
@@ -164,7 +202,6 @@ App = {
 		this.poll.songs[index].votes++;
 		this.songs[index].votes++;
 		this.updateVoteCountCache();
-		//inspect(this.voteCount);
 	}
 };
 
@@ -180,8 +217,6 @@ configure(function () {
 });
 
 get('/', function () {
-	//inspect(App.poll);
-	//inspect(App.songs);
 	this.pass('/vote');
 });
 
