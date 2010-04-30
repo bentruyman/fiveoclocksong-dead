@@ -78,7 +78,7 @@ $(function(){
 	
 	// Longpoll
 	(function poll(){
-		$.getJSON('/songs', function (songs) {
+		$.getJSON('/status', function (songs) {
 			$('#songs li').each(function (index) {
 				var cEl = $('.votes', this);
 				var oldVal = cEl.html();

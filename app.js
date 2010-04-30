@@ -11,6 +11,9 @@ var dns = require('dns'),
 	couchdb = require('couchdb');
 
 App = {
+	configuration: {
+		
+	},
 	/**
 	 * Contains various links to the CouchDB database resources used throughout
 	 * the application
@@ -50,7 +53,6 @@ App = {
 	 * @property voteCount
 	 */
 	voteCount: 0,
-	SONG_LIMIT: null,
 	boot: function () {
 		var self = this,
 			uc = self.userConfiguration;
@@ -62,9 +64,21 @@ App = {
 		self.database.link = self.database.client.db(uc.database.name);
 
 		/**
-		 * User configuration
+		 * Parse the user's configuration into a more digestible for the
+		 * application 
 		 */
-		self.SONG_LIMIT = uc.songLimit;
+		self.configuration.songLimit = uc.songLimit;
+		self.configuration.timers = {
+			start: {
+				hour: uc.timers.start.split(':')[0],
+				minutes: uc.timers.start.split(':')[1]
+			},
+			end: {
+				hour: uc.timers.end.split(':')[0],
+				minutes: uc.timers.end.split(':')[1]
+			},
+			delay: uc.timers.pollDelay * 1000
+		};
 
 		/**
 		 * Determine if there's a poll already made for today
@@ -79,9 +93,12 @@ App = {
 			self.updateSongCache();
 			self.updateVoteCountCache();
 
+			self.startPoll();
+
 			/**
 			 * Run the Express application
 			 */
+			inspect(self);
 			run();
 
 			sys.puts('FOCS has booted.');
@@ -135,10 +152,10 @@ App = {
 
 			/**
 			 * Check to make sure we at least have enough songs according to our
-			 * SONG_LIMIT
+			 * song limit
 			 */
-			if (songs.length < self.SONG_LIMIT) {
-				throw new Error('Not enough songs in the database to satisfy the SONG_LIMIT');
+			if (songs.length < self.configuration.songLimit) {
+				throw new Error('Not enough songs in the database to satisfy the song limit');
 			} else {
 				/**
 				 * Clear out the songs cache.
@@ -148,7 +165,7 @@ App = {
 				 * Lovely, looks like we have enough songs. Now lets start
 				 * plucking out random ones to use for today's poll
 				 */
-				for(var i = 0; i < self.SONG_LIMIT; i++) {
+				for(var i = 0; i < self.configuration.songLimit; i++) {
 					var song = songs.splice(Math.floor(Math.random() * songs.length), 1);
 					poll.songs.push({
 						id: song[0].id,
@@ -163,6 +180,54 @@ App = {
 				});
 			}
 		});
+	},
+	startPoll: function () {
+		var self = this,
+			cts = self.configuration.timers.start,
+			cte = self.configuration.timers.end,
+			date, hour, minutes;
+
+		sys.puts('Starting poll...');
+
+		/**
+		 * Start the timer to check for the "end of the day"
+		 */
+		var interval = setInterval(function () {
+			date = new Date();
+			hour = date.getHours();
+			minutes = date.getMinutes();
+
+			sys.puts('The time is: ' + hour + ':' + minutes);
+
+			if ((hour >= cte.hour && minutes >= cte.minutes)) {
+				self.stopPoll();
+				clearInterval(interval);
+			}
+		}, self.configuration.timers.delay);
+	},
+	stopPoll: function () {
+		var self = this,
+			cts = self.configuration.timers.start,
+			cte = self.configuration.timers.end,
+			date, hour, minutes;
+
+		sys.puts('Stopping poll...');
+
+		/**
+		 * Start the timer to check for the "beginning of the day"
+		 */
+		var interval = setInterval(function () {
+			date = new Date();
+			hour = date.getHours();
+			minutes = date.getMinutes();
+
+			sys.puts('The time is: ' + hour + ':' + minutes);
+
+			if (hour >= cts.hour && minutes >= cts.minutes && hour < cte.hour && minutes < cte.minutes) {
+				self.startPoll();
+				clearInterval(interval);
+			}
+		}, self.configuration.timers.delay);
 	},
 	updateSongCache: function () {
 		var self = this;
@@ -238,7 +303,7 @@ post('/vote', function () {
 	this.respond(200);
 });
 
-get('/songs', function () {
+get('/status', function () {
 	var self = this,
 		previousVoteCount = App.voteCount,
 		timer = setInterval(function () {
