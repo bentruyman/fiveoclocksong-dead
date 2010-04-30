@@ -1,5 +1,8 @@
 %h1#logo
   %span fiveoclocksong
 
+%div#fallback-player
+
 %ul#songs
   != this.partial('song.html.haml', { collection: songs })
+  
