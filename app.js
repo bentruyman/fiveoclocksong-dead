@@ -53,6 +53,11 @@ App = {
 	 * @property voteCount
 	 */
 	voteCount: 0,
+	/** 
+	 * Holder for the machine name of the last person who voted
+	 * @property lastVoter
+	 */
+	lastVoter: null,
 	boot: function () {
 		var self = this,
 			uc = self.userConfiguration;
@@ -149,7 +154,7 @@ App = {
 				},
 				result,
 				songs = data.rows;
-
+				
 			/**
 			 * Check to make sure we at least have enough songs according to our
 			 * song limit
@@ -169,7 +174,8 @@ App = {
 					var song = songs.splice(Math.floor(Math.random() * songs.length), 1);
 					poll.songs.push({
 						id: song[0].id,
-						votes: 0
+						votes: 0,
+						voters: []
 					});
 				}
 				/**
@@ -265,7 +271,25 @@ App = {
 		 * ERROR: Too much recursion.
 		 */
 		this.poll.songs[index].votes++;
+		
+		if(this.lastVoter){
+			var lv = this.lastVoter;
+			var voted = false;
+			
+			this.poll.songs[index].voters.forEach(function(item){
+				if(item.name == lv){
+					item.count++;
+					voted = true;
+				}
+			});
+
+			if(this.poll.songs[index].voters.length == 0 || voted == false){
+				this.poll.songs[index].voters.push({name: lv, count: 1});
+			}
+			
+		}
 		this.songs[index].votes++;
+		this.songs[index].voters = this.poll.songs[index].voters;
 		this.updateVoteCountCache();
 	}
 };
@@ -287,12 +311,9 @@ get('/', function () {
 
 get('/vote', function () {
 	var self = this;
-	dns.reverse(self.socket.remoteAddress, function(err,name){
-		//inspect(name);
-	});
 	self.render('vote.html.haml', {
 		locals: {
-			title: 'Five o\'clock Song',
+			title: 'fiveoclocksong',
 			songs: App.songs
 		}
 	});
@@ -300,6 +321,17 @@ get('/vote', function () {
 
 post('/vote', function () {
 	App.vote(this.param('index'));
+
+	var self = this;
+	dns.reverse(self.socket.remoteAddress, function(err,name){
+		if(self.socket.remoteAddress == "127.0.0.1"){name = "kingofpain."}
+		// trim off the CMASS stuff
+		var shortName = name.toString().split(".")[0];
+		// tell the App who voted last
+		App.lastVoter = shortName;
+		
+	});
+
 	this.respond(200);
 });
 
@@ -308,12 +340,18 @@ get('/status', function () {
 		previousVoteCount = App.voteCount,
 		timer = setInterval(function () {
 			if (App.voteCount > previousVoteCount) {
-				var votes = [];
+				var resp = {
+					votes: [],
+					voters: []
+				};
+				
 				App.songs.forEach(function (item) {
-					votes.push(item.votes);
-				})
+					resp.votes.push(item.votes);
+					resp.voters.push(item.voters);
+				});
+
 				self.contentType('json');
-				self.respond(200, JSON.encode(votes)),
+				self.respond(200, JSON.encode(resp)),
 				clearInterval(timer);
 			}
 		}, 100);

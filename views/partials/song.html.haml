@@ -1,9 +1,11 @@
 %li
-  %audio{src: '/public/media/' + song.item.filename, autobuffer: true, controls: false}
+  %audio{autobuffer: true, controls: false}
+    %source{src: '/public/media/' + song.item.filename, type: 'audio/mpeg'}
+    %source{src: '/public/media/' + song.item.ogg, type: 'audio/ogg'}
   %div.play-pause
     %div
   %a{href: '#', title: 'Vote for ' + song.item.title}
     %span.title= song.item.title + ' - ' + song.item.artist
     %span.album= ' (' + song.item.album + ')'
   %span.votes= song.votes
-  %div.voted= 'These people voted for this song today:'
+  %div.voted These people voted for this song today
