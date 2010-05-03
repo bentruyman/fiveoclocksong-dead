@@ -14,7 +14,15 @@ exports.configuration = {
 		/**
 		 * Name of the CouchDB database
 		 */
-		name: 'fiveoclocksong'
+		name: 'fiveoclocksongs'
+	},
+	server: {
+		/**
+		 * How long (in seconds) the server should wait before it closes the
+		 * status connection the server as the server may return a
+		 * "504: Gateway Timeout"
+		 */
+		statusTimeout: 5
 	},
 	/**
 	 * Time of Day configuration
@@ -27,7 +35,12 @@ exports.configuration = {
 		/**
 		 * The time the poll should end
 		 */
-		end: '10:35',
+		end: '17:30',
+		/**
+		 * How long (in seconds) the delay should be when checking to see what
+		 * the current time is
+		 */
+		delay: 5,
 		/**
 		 * UTC time zone offset
 		 * EST: -5
@@ -36,15 +49,10 @@ exports.configuration = {
 		 * PST: -8
 		 * etc...
 		 */
-		timeZoneOffset: -6,
-		/**
-		 * How long the interval should be when checking to see what the current
-		 * time is
-		 */
-		pollDelay: 5,
+		timeZoneOffset: -6
 	},
 	/**
 	 * The number of songs to present to the user each day
 	 */
-	songLimit: 3
+	songLimit: 5
 };

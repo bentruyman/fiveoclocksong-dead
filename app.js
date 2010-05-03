@@ -42,6 +42,37 @@ App = {
 	 */
 	songs: null,
 	/**
+	 * @property statusEmitter
+	 */
+	statusEmitter: {
+		listeners: [],
+		addListener: function (hollaback) {
+			this.listeners.push(hollaback);
+		},
+		removeListener: function (hollaback) {
+			this.listeners.forEach(function (item, index) {
+				if (item === hollaback) {
+					this.listeners.splice(index, 1);
+				}
+			});
+		},
+		removeAllListeners: function () {
+			this.listeners = [];
+		},
+		emit: function (type, data) {
+			var response = {
+				type: type,
+				data: data
+			};
+
+			this.listeners.forEach(function (item) {
+				item.call(App, response);
+			});
+
+			this.removeAllListeners();
+		}
+	},
+	/**
 	 * Contains the application configuration settings as specified by the user
 	 * in config/app.js
 	 * @property userConfiguration
@@ -73,6 +104,9 @@ App = {
 		 * application 
 		 */
 		self.configuration.songLimit = uc.songLimit;
+		self.configuration.server = {
+			statusTimeout: uc.server.statusTimeout * 1000
+		};
 		self.configuration.timers = {
 			start: {
 				hour: uc.timers.start.split(':')[0],
@@ -82,7 +116,7 @@ App = {
 				hour: uc.timers.end.split(':')[0],
 				minutes: uc.timers.end.split(':')[1]
 			},
-			delay: uc.timers.pollDelay * 1000
+			delay: uc.timers.delay * 1000
 		};
 
 		/**
@@ -103,7 +137,6 @@ App = {
 			/**
 			 * Run the Express application
 			 */
-			inspect(self);
 			run();
 
 			sys.puts('FOCS has booted.');
@@ -271,7 +304,7 @@ App = {
 		 * ERROR: Too much recursion.
 		 */
 		this.poll.songs[index].votes++;
-		
+
 		if(this.lastVoter){
 			var lv = this.lastVoter;
 			var voted = false;
@@ -288,9 +321,22 @@ App = {
 			}
 			
 		}
+
 		this.songs[index].votes++;
 		this.songs[index].voters = this.poll.songs[index].voters;
 		this.updateVoteCountCache();
+
+		var status = {
+			votes: [],
+			voters: []
+		};
+
+		this.songs.forEach(function (item) {
+			status.votes.push(item.votes);
+			status.voters.push(item.voters);
+		});
+
+		this.statusEmitter.emit('vote', status);
 	}
 };
 
@@ -322,11 +368,20 @@ get('/vote', function () {
 post('/vote', function () {
 	App.vote(this.param('index'));
 
-	var self = this;
-	dns.reverse(self.socket.remoteAddress, function(err,name){
-		if(self.socket.remoteAddress == "127.0.0.1"){name = "kingofpain."}
+	var self = this,
+		address = self.headers['x-real-ip'] || self.socket.remoteAddress;
+		inspect(address);
+
+	dns.reverse(address, function(err, name){
+		if(address === '127.0.0.1'){
+			name = 'kingofpain';
+		} else if (err !== null) {
+			name = 'Unknown';
+		}
+
 		// trim off the CMASS stuff
-		var shortName = name.toString().split(".")[0];
+		var shortName = name.toString().split('.')[0];
+
 		// tell the App who voted last
 		App.lastVoter = shortName;
 		
@@ -336,25 +391,25 @@ post('/vote', function () {
 });
 
 get('/status', function () {
-	var self = this,
-		previousVoteCount = App.voteCount,
-		timer = setInterval(function () {
-			if (App.voteCount > previousVoteCount) {
-				var resp = {
-					votes: [],
-					voters: []
-				};
-				
-				App.songs.forEach(function (item) {
-					resp.votes.push(item.votes);
-					resp.voters.push(item.voters);
-				});
+	var self = this;
 
-				self.contentType('json');
-				self.respond(200, JSON.encode(resp)),
-				clearInterval(timer);
-			}
-		}, 100);
+	self.contentType('json');
+
+	var hollaback = function (stream) {
+		// clearTimeout(timeout);
+		self.respond(200, JSON.encode(stream));
+	};
+
+	App.statusEmitter.addListener(hollaback);
+
+	// var timeout = setTimeout(function () {
+	// 	App.statusEmitter.removeListener('status', hollaback);
+	// 	self.respond(200, JSON.encode({
+	// 		type: 'ping',
+	// 		data: {}
+	// 	}));
+	// }, App.configuration.server.statusTimeout);
+
 });
 
 get('/*.css', function(file){
