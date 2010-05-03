@@ -305,18 +305,18 @@ App = {
 		 */
 		this.poll.songs[index].votes++;
 
-		if(this.lastVoter){
+		if (this.lastVoter){
 			var lv = this.lastVoter;
 			var voted = false;
 			
 			this.poll.songs[index].voters.forEach(function(item){
-				if(item.name == lv){
+				if (item.name == lv){
 					item.count++;
 					voted = true;
 				}
 			});
 
-			if(this.poll.songs[index].voters.length == 0 || voted == false){
+			if (this.poll.songs[index].voters.length == 0 || voted == false){
 				this.poll.songs[index].voters.push({name: lv, count: 1});
 			}
 			
@@ -423,5 +423,6 @@ get('/error/view', function () {
 App.boot();
 
 function inspect (o) {
+  var sys = require('sys');
 	sys.puts(sys.inspect(o));
 }

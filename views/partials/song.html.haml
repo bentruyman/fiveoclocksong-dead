@@ -8,4 +8,6 @@
     %span.album= ' (' + song.item.album + ')'
   %span.votes= song.votes
   %div.voters
-    != this.partial('voter.html.haml', { collection: song.voters })
+    These people voted for this song today
+    - if (song.voters)
+      != this.partial('voter.html.haml', { collection: song.voters })
