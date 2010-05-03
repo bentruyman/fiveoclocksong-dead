@@ -38,13 +38,6 @@ var App = {
 	},
 	setupSongRollovers: function () {
 		$('#songs a').each(function (index) {
-			$(this).click(function (event) {
-				event.preventDefault();
-				$.post('/vote', {
-					index: index
-				});
-			});
-
 			var bg = "#DEDEDE";
 			var fc = "#000000";
 			switch(index){
