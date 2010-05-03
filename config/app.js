@@ -22,7 +22,7 @@ exports.configuration = {
 		 * status connection the server as the server may return a
 		 * "504: Gateway Timeout"
 		 */
-		statusTimeout: 5
+		statusTimeout: 55
 	},
 	/**
 	 * Time of Day configuration
@@ -40,7 +40,7 @@ exports.configuration = {
 		 * How long (in seconds) the delay should be when checking to see what
 		 * the current time is
 		 */
-		delay: 55,
+		delay: 5,
 		/**
 		 * UTC time zone offset
 		 * EST: -5

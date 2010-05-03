@@ -30,7 +30,11 @@ var App = {
 	},
 	setupPingResponder: function () {
 		this.registerStatusResponder('ping', function (data) {
-			console.log('I\'ve been pinged!');
+			try {
+				console.log(data.message);
+			} catch (e) {
+				// You ain't got no console
+			}
 		});
 	},
 	setupPreviewPlayer: function () {

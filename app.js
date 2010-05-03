@@ -11,9 +11,7 @@ var dns = require('dns'),
 	couchdb = require('couchdb');
 
 App = {
-	configuration: {
-		
-	},
+	configuration: {},
 	/**
 	 * Contains various links to the CouchDB database resources used throughout
 	 * the application
@@ -31,6 +29,33 @@ App = {
 		 */
 		link: null
 	},
+	/**
+	 * Random messages to be sent when a ping status is sent
+	 * @property pingMessages
+	 */
+	pingMessages: [
+		'Just pingin\' ya.', 
+		'Are you still there? Go vote or sumthin',
+		'Knock knock! Who\'s there? ME!',
+		'Shouldn\'t you be working instead of reading your console?',
+		'I hope you voted for an awesome song.',
+		'Could you vote for a Rush song for me?',
+		'Maturity is only a short break in adolescence.',
+		'I’ve decided that the key to happiness is low expectations.',
+		'I have lost friends, some by death... others through sheer inability to cross the street.',
+		'A vote is like a rifle: its usefulness depends upon the character of the user.',
+		'If you cannot convince them, confuse them.',
+		'I always keep a supply of stimulant handy in case I see a snake--which I also keep handy.',
+		'Death is only going to happen to you once; I don\'t want to miss it.',
+		'We do not write because we want to; we write because we have to.',
+		'It is more tolerable to be refused than deceived.',
+		'Reading is no substitute for action.',
+		'The best things carried to excess are wrong.',
+		'He that is not with me is against me.',
+		'There can never be a complete confidence in a power which is excessive.',
+		'There ought to be one day-- just one-- when there is open season on senators.',
+		'Age is foolish and forgetful when it underestimates youth.'
+	],
 	/**
 	 * A cache of the poll object used in the current day's poll
 	 * @property poll
@@ -408,7 +433,9 @@ get('/status', function () {
 		App.statusEmitter.removeListener('status', hollaback);
 		self.respond(200, JSON.encode({
 			type: 'ping',
-			data: {}
+			data: {
+				message: App.pingMessages[Math.floor(Math.random() * App.pingMessages.length)]
+			}
 		}));
 	}, App.configuration.server.statusTimeout);
 
