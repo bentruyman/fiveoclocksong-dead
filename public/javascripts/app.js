@@ -3,6 +3,7 @@ var App = {
 	boot: function () {
 		this.setupPingResponder();
 		this.setupPreviewPlayer();
+		this.setupSongRollovers();
 		this.setupVoteResponder();
 
 		this.poll();
@@ -34,6 +35,58 @@ var App = {
 	},
 	setupPreviewPlayer: function () {
 		
+	},
+	setupSongRollovers: function () {
+		$('#songs a').each(function (index) {
+			$(this).click(function (event) {
+				event.preventDefault();
+				$.post('/vote', {
+					index: index
+				});
+			});
+
+			var bg = "#DEDEDE";
+			var fc = "#000000";
+			switch(index){
+				case 0:
+				bg = "#FDB112";
+				fc = "#000000";
+				break;
+				case 1:
+				bg = "#AA1622";
+				fc = "#FFFFFF";
+				break;
+				case 2:
+				bg = "#0D4F59";
+				fc = "#FFFFFF";
+				break;
+				case 3:
+				bg = "#C6BD95";
+				fc = "#000000";
+				break;
+				case 4:
+				bg = "#DEDEDE";
+				fc = "#000000";
+				break;
+				default:
+				bg = "#DEDEDE";
+				fc = "#000000";
+				break;
+			}
+
+			$(this).mouseenter(function(){
+				$(this).stop().animate({
+					backgroundColor: bg,
+					color: fc
+				},250);
+			}).mouseleave(function(){
+				$(this).stop().animate({
+					backgroundColor: "#FFFFFF",
+					color: "#000000"
+				},250);
+			});
+
+		});
 	},
 	setupVoteResponder: function () {
 		$('#songs .voters').css('opacity', 0);
@@ -137,56 +190,7 @@ $(function () { App.boot(); });
 // 		}
 // 	});	
 // 	
-// 	$('#songs a').each(function (index) {
-// 		$(this).click(function (event) {
-// 			event.preventDefault();
-// 			$.post('/vote', {
-// 				index: index
-// 			});
-// 		});
-// 
-// 		var bg = "#DEDEDE";
-// 		var fc = "#000000";
-// 		switch(index){
-// 			case 0:
-// 			bg = "#FDB112";
-// 			fc = "#000000";
-// 			break;
-// 			case 1:
-// 			bg = "#AA1622";
-// 			fc = "#FFFFFF";
-// 			break;
-// 			case 2:
-// 			bg = "#0D4F59";
-// 			fc = "#FFFFFF";
-// 			break;
-// 			case 3:
-// 			bg = "#C6BD95";
-// 			fc = "#000000";
-// 			break;
-// 			case 4:
-// 			bg = "#DEDEDE";
-// 			fc = "#000000";
-// 			break;
-// 			default:
-// 			bg = "#DEDEDE";
-// 			fc = "#000000";
-// 			break;
-// 		}
-// 		
-// 		$(this).mouseenter(function(){
-// 			$(this).stop().animate({
-// 				backgroundColor: bg,
-// 				color: fc
-// 			},250);
-// 		}).mouseleave(function(){
-// 			$(this).stop().animate({
-// 				backgroundColor: "#FFFFFF",
-// 				color: "#000000"
-// 			},250);
-// 		});
-// 		
-// 	});
+
 // 	
 // 
 // 

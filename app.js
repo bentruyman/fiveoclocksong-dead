@@ -215,6 +215,8 @@ App = {
 				 * Save this carefully crafted poll object into the database
 				 */
 				self.database.link.saveDoc(poll, function (error, data) {
+					poll._id = data.id;
+					poll._rev = data.rev;
 					hollaback.call(this, poll);
 				});
 			}
@@ -357,6 +359,7 @@ get('/', function () {
 
 get('/vote', function () {
 	var self = this;
+
 	self.render('vote.html.haml', {
 		locals: {
 			title: 'fiveoclocksong',
@@ -370,7 +373,6 @@ post('/vote', function () {
 
 	var self = this,
 		address = self.headers['x-real-ip'] || self.socket.remoteAddress;
-		inspect(address);
 
 	dns.reverse(address, function(err, name){
 		if(address === '127.0.0.1'){
@@ -396,19 +398,19 @@ get('/status', function () {
 	self.contentType('json');
 
 	var hollaback = function (stream) {
-		// clearTimeout(timeout);
+		clearTimeout(timeout);
 		self.respond(200, JSON.encode(stream));
 	};
 
 	App.statusEmitter.addListener(hollaback);
 
-	// var timeout = setTimeout(function () {
-	// 	App.statusEmitter.removeListener('status', hollaback);
-	// 	self.respond(200, JSON.encode({
-	// 		type: 'ping',
-	// 		data: {}
-	// 	}));
-	// }, App.configuration.server.statusTimeout);
+	var timeout = setTimeout(function () {
+		App.statusEmitter.removeListener('status', hollaback);
+		self.respond(200, JSON.encode({
+			type: 'ping',
+			data: {}
+		}));
+	}, App.configuration.server.statusTimeout);
 
 });
 

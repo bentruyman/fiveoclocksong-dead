@@ -40,7 +40,7 @@ exports.configuration = {
 		 * How long (in seconds) the delay should be when checking to see what
 		 * the current time is
 		 */
-		delay: 5,
+		delay: 55,
 		/**
 		 * UTC time zone offset
 		 * EST: -5

@@ -1,6 +1,7 @@
 %li
   %audio{autobuffer: true, controls: false}
     %source{src: '/media/mp3/' + song.item.filename + '.mp3', type: 'audio/mpeg'}
+    %source{src: '/media/ogg/' + song.item.filename + '.ogg', type: 'audio/ogg'}
   %div.play-pause
     %div
   %a{href: '#', title: 'Vote for ' + song.item.title}
