@@ -22,7 +22,7 @@ exports.configuration = {
 		 * status connection the server as the server may return a
 		 * "504: Gateway Timeout"
 		 */
-		statusTimeout: 55
+		statusTimeout: 5
 	},
 	/**
 	 * Time of Day configuration

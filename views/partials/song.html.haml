@@ -1,14 +1,15 @@
 %li
-  %audio{autobuffer: true, controls: false}
-    %source{src: '/media/mp3/' + song.item.filename + '.mp3', type: 'audio/mpeg'}
-    %source{src: '/media/ogg/' + song.item.filename + '.ogg', type: 'audio/ogg'}
-  %div.play-pause
-    %div
-  %a{href: '#', title: 'Vote for ' + song.item.title}
-    %span.title= song.item.title + ' - ' + song.item.artist
-    %span.album= ' (' + song.item.album + ')'
-  %span.votes= song.votes
+  %a.play_pause.box{href: '#'}
+    %span Play / Pause
+  %a.song.box{href: '#', title: 'Vote for ' + song.item.title}
+    %span.title= song.item.title
+    %span.artist= song.item.artist
+    %span.album= song.item.album
+  %span.votes.box= song.votes
   %div.voters
     These people voted for this song today
     - if (song.voters)
       != this.partial('voter.html.haml', { collection: song.voters })
+  %audio{autobuffer: false, controls: false, autoplay: false}
+    %source{src: '/media/mp3/' + song.item.filename + '.mp3', type: 'audio/mpeg'}
+    %source{src: '/media/ogg/' + song.item.filename + '.ogg', type: 'audio/ogg'}

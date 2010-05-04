@@ -2,10 +2,33 @@
 %html
   %head
     %title= title
+    %meta{ name: 'viewport', content: 'width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=0' }
+    %meta{ name: 'apple-mobile-web-app-capable', content: 'yes' }
     %script{ src: '/javascripts/jquery-1.3.2.min.js' }
     %script{ src: '/javascripts/app.js' }
     %script{ src: '/javascripts/jquery.color.js' }
+    %link{ rel: 'stylesheet', href: 'http://yui.yahooapis.com/3.1.0/build/cssreset/reset-min.css' }
     %link{ rel: 'stylesheet', href: '/style.css' }
+    %link{ rel: 'apple-touch-startup-image', href: '/images/startup.png' }
   %body
     #wrapper
+      %h1#logo
+        %a{ href: '/' } fiveoclocksong
+        %span
+          CM
       != body
+      #footer
+        %p#creators
+          Created by:
+          %a{ href: 'http://andrewsommerfeld.com/' } Andrew Sommerfeld
+          and
+          %a{ href: 'http://bentruyman.com' } Ben Truyman
+        %p#engine
+          Powered by:
+          %a{ href: 'http://nodejs.org/' } Node
+          , 
+          %a{ href: 'http://couchdb.apache.org/' } CouchDB
+          , 
+          %a{ href: 'http://expressjs.com/' } Express
+          , and 
+          %a{ href: "javascript:(function()%7Bvar%20d=document,j=d.getElementById('__cornify_nodes'),k=null;var%20files=%5B'http://cornify.com/js/cornify.js','http://cornify.com/js/cornify_run.js'%5D;if(j)%7Bcornify_add();%7Delse%7Bk=d.createElement('div');k.id='__cornify_nodes';d.getElementsByTagName('body')%5B0%5D.appendChild(k);for(var%20l=0;l%3Cfiles.length;l++)%7Bj=d.createElement('script');j.src=files%5Bl%5D;k.appendChild(j);%7D%7D%7D)();" } Unicorns

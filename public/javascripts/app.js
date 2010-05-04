@@ -3,7 +3,6 @@ var App = {
 	boot: function () {
 		this.setupPingResponder();
 		this.setupPreviewPlayer();
-		this.setupSongRollovers();
 		this.setupVoteResponder();
 
 		this.poll();
@@ -38,51 +37,14 @@ var App = {
 		});
 	},
 	setupPreviewPlayer: function () {
-		
-	},
-	setupSongRollovers: function () {
-		$('#songs a').each(function (index) {
-			var bg = "#DEDEDE";
-			var fc = "#000000";
-			switch(index){
-				case 0:
-				bg = "#FDB112";
-				fc = "#000000";
-				break;
-				case 1:
-				bg = "#AA1622";
-				fc = "#FFFFFF";
-				break;
-				case 2:
-				bg = "#0D4F59";
-				fc = "#FFFFFF";
-				break;
-				case 3:
-				bg = "#C6BD95";
-				fc = "#000000";
-				break;
-				case 4:
-				bg = "#DEDEDE";
-				fc = "#000000";
-				break;
-				default:
-				bg = "#DEDEDE";
-				fc = "#000000";
-				break;
-			}
-
-			$(this).mouseenter(function(){
-				$(this).stop().animate({
-					backgroundColor: bg,
-					color: fc
-				},250);
-			}).mouseleave(function(){
-				$(this).stop().animate({
-					backgroundColor: "#FFFFFF",
-					color: "#000000"
-				},250);
+		var currentlyPlaying 
+		$('#songs li').each(function (event) {
+			var root = this;
+			$('.play_pause', root).click(function (event) {
+				event.preventDefault();
+				var audio = $('audio', root).get(0);
+				audio.play();
 			});
-
 		});
 	},
 	setupVoteResponder: function () {
@@ -104,12 +66,14 @@ var App = {
 			}, 150);
 		});
 
-		$('#songs a').each(function (index) {
-			$(this).click(function (event) {
+		$('#songs .song').each(function (index) {
+			$(this).mousedown(function (event) {
 				event.preventDefault();
 				$.post('/vote', {
 					index: index
 				});
+			}).click(function (event) {
+				event.preventDefault();
 			});
 		});
 
@@ -122,13 +86,15 @@ var App = {
 
 				if (oldValue !== newValue) {
 					// Update Vote Count
-					$votes.animate({
-						color: '#ffffff'
-					}, 150, function () {
-						$votes.text(newValue).animate({
-							color: '#000000'
-						}, 150);
-					});
+					if ($.browser.safari) {
+						$votes.addClass('updated');
+						setTimeout(function () {
+							$votes.removeClass('updated');
+							$votes.text(newValue);
+						}, 250);
+					} else {
+						$votes.text(newValue);
+					}
 
 					// Update Voters
 					var html = 'These people voted for this song today';
