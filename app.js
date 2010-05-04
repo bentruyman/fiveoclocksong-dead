@@ -67,6 +67,10 @@ App = {
 	 */
 	songs: null,
 	/**
+	 * @property pollActive - indicates if a poll is presently running
+	 */
+	pollActive: true,
+	/**
 	 * @property statusEmitter
 	 */
 	statusEmitter: {
@@ -255,6 +259,8 @@ App = {
 
 		sys.puts('Starting poll...');
 
+		this.pollActive = true;
+
 		/**
 		 * Start the timer to check for the "end of the day"
 		 */
@@ -262,7 +268,11 @@ App = {
 			date = new Date();
 			hour = date.getHours();
 			minutes = date.getMinutes();
-
+			
+			if(minutes.toString().length == 1){
+				minutes = "0" + minutes;
+			}
+			
 			sys.puts('The time is: ' + hour + ':' + minutes);
 
 			if ((hour >= cte.hour && minutes >= cte.minutes)) {
@@ -278,6 +288,10 @@ App = {
 			date, hour, minutes;
 
 		sys.puts('Stopping poll...');
+		
+		this.pollActive = false;
+
+		this.statusEmitter.emit('stopPoll', true);
 
 		/**
 		 * Start the timer to check for the "beginning of the day"
@@ -286,6 +300,10 @@ App = {
 			date = new Date();
 			hour = date.getHours();
 			minutes = date.getMinutes();
+
+			if(minutes.toString().length == 1){
+				minutes = "0" + minutes;
+			}
 
 			sys.puts('The time is: ' + hour + ':' + minutes);
 
@@ -383,14 +401,67 @@ get('/', function () {
 });
 
 get('/vote', function () {
-	var self = this;
+	var self = this,
+		address = self.headers['x-real-ip'] || self.socket.remoteAddress;
 
-	self.render('vote.html.haml', {
-		locals: {
-			title: 'fiveoclocksong',
-			songs: App.songs
+	dns.reverse(address, function(err, name){
+		if(address === '127.0.0.1'){
+			name = 'kingofpain';
+		} else if (err !== null) {
+			name = 'Unknown';
+		}
+
+		// trim off the CMASS stuff
+		var shortName = name.toString().split('.')[0];
+
+		// slice off the dash and machine type (if it exists)
+		shortName = shortName.split('-')[0];
+
+		// tell the App who voted last
+		App.lastVoter = shortName;
+		
+	});
+
+
+	var wIndex = 0,
+	wCount = 0;
+	App.poll.songs.forEach(function (item, index) {
+		if(wCount < item.votes){
+			wCount = item.votes;
+			wIndex = index;
 		}
 	});
+	
+	// get winner's name and vote count
+	var wName = '', wCount = 0;
+	App.poll.songs[wIndex].voters.forEach(function(item, index){
+		if(wCount < item.count){
+			wCount = item.count;
+			wName = item.name;
+		}
+	});
+
+	if(App.pollActive){
+
+		self.render('vote.html.haml', {
+			locals: {
+				songs: App.songs
+			}
+		});
+		
+	}else{
+				
+		self.render('winner.html.haml', {
+			locals: {
+				songs: App.songs[wIndex],
+				winnerName: wName,
+				winnerCount: wCount
+			}
+		});
+
+		
+	}
+
 });
 
 post('/vote', function () {
@@ -409,12 +480,20 @@ post('/vote', function () {
 		// trim off the CMASS stuff
 		var shortName = name.toString().split('.')[0];
 
+		// slice off the dash and machine type (if it exists)
+		shortName = shortName.split('-')[0];
+
 		// tell the App who voted last
 		App.lastVoter = shortName;
 		
 	});
 
-	this.respond(200);
+	if(App.pollActive){
+		this.respond(200);
+	}else{
+		this.respond(417);
+	}
+	
 });
 
 get('/status', function () {
@@ -438,7 +517,7 @@ get('/status', function () {
 			}
 		}));
 	}, App.configuration.server.statusTimeout);
-
+	
 });
 
 get('/*.css', function(file){

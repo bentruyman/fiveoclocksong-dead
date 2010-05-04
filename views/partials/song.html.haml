@@ -5,11 +5,10 @@
     %span.title= song.item.title
     %span.artist= song.item.artist
     %span.album= song.item.album
+    %marquee.voters{scrollamount: 1}
+      - if (song.voters)
+        != this.partial('voter.html.haml', { collection: song.voters })
   %span.votes.box= song.votes
-  %div.voters
-    These people voted for this song today
-    - if (song.voters)
-      != this.partial('voter.html.haml', { collection: song.voters })
-  %audio{autobuffer: false, controls: false, autoplay: false}
-    %source{src: '/media/mp3/' + song.item.filename + '.mp3', type: 'audio/mpeg'}
-    %source{src: '/media/ogg/' + song.item.filename + '.ogg', type: 'audio/ogg'}
+  %audio{autobuffer: true, controls: false, autoplay: false}
+    %source{src: '/public/media/mp3/' + song.item.filename + '.mp3', type: 'audio/mpeg'}
+    %source{src: '/public/media/ogg/' + song.item.filename + '.ogg', type: 'audio/ogg'}

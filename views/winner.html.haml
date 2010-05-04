@@ -1,0 +1,11 @@
+%div#winner
+  %span.box
+    %span.title= songs.item.title
+    %span.artist= songs.item.artist
+    %span.album= songs.item.album
+    %audio.winner{autobuffer: true, controls: true, autoplay: true}
+      %source{src: '/public/media/mp3/' + songs.item.filename + '.mp3', type: 'audio/mpeg'}
+      %source{src: '/public/media/ogg/' + songs.item.filename + '.ogg', type: 'audio/ogg'}
+  %span.votes.box
+    The CMer with the most votes on this song is
+    %span= winnerName + ' (' + winnerCount + ')'

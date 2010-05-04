@@ -4,6 +4,7 @@ var App = {
 		this.setupPingResponder();
 		this.setupPreviewPlayer();
 		this.setupVoteResponder();
+		this.setupStopPollResponder();
 
 		this.poll();
 	},
@@ -23,6 +24,28 @@ var App = {
 			self.poll();
 		});
 	},
+	stopPoll: function(){
+		// fade out site
+		$("#songs").animate({
+			opacity: 0
+		},1000);
+		
+		
+		// grab results page, remove old content, write new
+		
+		$.get('/',function(data){
+			
+			var newContent = $(data).find("#winner").hide()[0];
+			
+			$("#songs").replaceWith(newContent);
+			
+			$(newContent).fadeIn(500);
+			
+		});
+		
+		
+		
+	},
 	registerStatusResponder: function (statusType, hollaback) {
 		this.statusResponders[statusType] = this.statusResponders[statusType] || [];
 		this.statusResponders[statusType].push(hollaback);
@@ -36,36 +59,102 @@ var App = {
 			}
 		});
 	},
+	setupStopPollResponder: function(){
+		this.registerStatusResponder('stopPoll', function (data) {
+			try {
+				this.stopPoll();
+			} catch (e) {
+				// You ain't got no console
+			}
+		});
+		
+	},
 	setupPreviewPlayer: function () {
-		var currentlyPlaying 
-		$('#songs li').each(function (event) {
+		var currentlyPlaying;
+
+		var aEls = $("audio");
+
+		// show controls once video is loaded.  This is indicated on first load via loadeddata event,
+		// or, once cached, via canplaythrough event.  unbind these events after they fire to clean up.
+		
+		$(aEls).each(function(){
+			
+			var ppBox = $(".play_pause",$(this).parent());
+
+			// only show player controls once the audio has been loaded
+			$(ppBox).css({
+				width: 0
+			});
+			
+			$(this).bind("loadedmetadata",function(){
+				$(ppBox).animate({
+					width: "95px"
+				},200);
+				$(this).unbind("loadeddata");
+
+			}).bind("canplaythrough",function(){
+
+				$(ppBox).animate({
+					width: "95px"
+				},200);
+				$(this).unbind("canplaythrough");
+
+			}).bind("ended",function(){
+
+				// once play has ended, set the play button back to default, and rewind track
+				$(this).next().css({
+					backgroundPosition: "0px 0px"
+				});
+				this.currentTime = 0;
+				this.pause();
+
+			});
+			
+			
+			
+		});
+
+		$('#songs li').each(function (index, event) {
 			var root = this;
+			
 			$('.play_pause', root).click(function (event) {
 				event.preventDefault();
-				var audio = $('audio', root).get(0);
-				audio.play();
+				//var audio = $('audio', root).get(0);
+				var audios = $('audio');
+				
+				$(audios).each(function(i){
+					var button = $("span",$(this).parent());
+					
+					if(index == i){
+						
+						if(this.paused){
+							
+							$(button).addClass('pause');
+							this.play();
+							
+						}else{
+							
+							$(button).removeClass('pause');
+							this.pause();
+
+						}
+						
+					}else{
+						
+						$(button).removeClass('pause');
+						this.pause();
+						
+					}
+
+				});			
+				
+				
 			});
 		});
 	},
 	setupVoteResponder: function () {
-		$('#songs .voters').css('opacity', 0);
-
-		$('#songs .votes').mouseenter(function () {
-			var pos = $(this).position(),
-				w = $(this).outerWidth();
-
-			$(this).next().css({
-				left: pos.left + w,
-				top: '-5px'
-			}).stop().animate({
-				opacity: 1
-			}, 150);
-		}).mouseleave(function () {
-			$(this).next().stop().animate({
-				opacity: 0
-			}, 150);
-		});
-
+		$('marquee').marquee('voters');
+		
 		$('#songs .song').each(function (index) {
 			$(this).mousedown(function (event) {
 				event.preventDefault();
@@ -80,7 +169,7 @@ var App = {
 		this.registerStatusResponder('vote', function (data) {
 			$('#songs li').each(function (index) {
 				var $votes = $('.votes', this),
-					$voters = $('.voters', this),
+					$voters = $('.voters div', this),
 					oldValue = Number($votes.text()),
 					newValue = data.votes[index];
 
@@ -97,9 +186,9 @@ var App = {
 					}
 
 					// Update Voters
-					var html = 'These people voted for this song today';
+					var html = '';
 					for (var i = 0, j = data.voters[index].length; i < j; i++) {
-						html += '<span>' + data.voters[index][i].name + '(' + data.voters[index][i].count + ')</span>';
+						html += '<span>' + data.voters[index][i].name + ' (' + data.voters[index][i].count + ') </span>';
 					}
 					$voters.html(html);
 				}
@@ -109,52 +198,3 @@ var App = {
 };
 
 $(function () { App.boot(); });
-
-// $(document).ready(function(){
-// 	var flAudio = ({
-// 		init: function(){
-// 
-// 			var params = {
-// 				menu: "false",
-// 				allowScriptAccess: "always"
-// 			};
-// 
-// 			var flashvars = {};
-// 			var attributes = {
-// 				id:"fallback-player",
-// 				name:"fallback-player"
-// 			};
-// 
-// 			swfobject.embedSWF("/public/swf/player.swf", "fallback-player", "1", "1", "9.0.0","", flashvars, params, attributes);
-// 
-// 		},
-// 		getFlashMovie: function(movieName){
-// 			var isIE = navigator.appName.indexOf("Microsoft") != -1;
-// 			return (isIE) ? window[movieName] : document[movieName];
-// 		},
-// 		loadSong: function(song){
-// 			var player = this.getFlashMovie("fallback-player");
-// 			player.loadSong(song);
-// 		},
-// 		pauseSong: function(){
-// 			var player = this.getFlashMovie("fallback-player");
-// 			player.pauseSong();
-// 		},
-// 		playSong: function(){
-// 			var player = this.getFlashMovie("fallback-player");
-// 			player.playSong();
-// 		},
-// 		flashMsg: function(msg){
-// 			if($.browser.msie){
-// 				alert("as: " + msg);
-// 			}else{
-// 				console.log("as: " + msg);
-// 			}
-// 		}
-// 	});	
-// 	
-
-// 	
-// 
-// 
-// });

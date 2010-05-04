@@ -35,7 +35,7 @@ exports.configuration = {
 		/**
 		 * The time the poll should end
 		 */
-		end: '17:30',
+		end: '17:00',
 		/**
 		 * How long (in seconds) the delay should be when checking to see what
 		 * the current time is
