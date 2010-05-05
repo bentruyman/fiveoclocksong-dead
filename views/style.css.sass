@@ -70,8 +70,9 @@ audio
     .information
       :margin 0 20px
     .play_pause
-      :margin-left -!leftColumnWidth
+      :margin-left -100%
       :overflow hidden
+      :right !leftColumnWidth
       :width !leftColumnWidth
         span
           :background transparent url(/public/images/play_pause.png) no-repeat 0 0
@@ -101,15 +102,14 @@ audio
       :text-align center
       =text-shadow rgba(255, 255, 255, 0.6) 0 1px 0
       :text-shadow rgba(255, 255, 255, 0.6) 0 1px 0
-      :-webkit-transition-property opacity
-      :-webkit-transition-duration .25s
+      :-webkit-transition-property -webkit-transform
+      :-webkit-transition-duration .5s
       :height 95px !important
     .votes.updated
-      :opacity 0
-      :-webkit-transition-property opacity
-      :-webkit-transition-duration .25s
+      :-webkit-transform rotateX(360deg)
+      :-webkit-transition-property -webkit-transform
+      :-webkit-transition-duration .5s
     .voters
-      :display none
       :height 20px
       span
         :display inline

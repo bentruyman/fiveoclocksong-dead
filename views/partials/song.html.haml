@@ -1,6 +1,4 @@
 %li
-  %a.play_pause.box{href: '#'}
-    %span Play / Pause
   %a.song.box{href: '#', title: 'Vote for ' + song.item.title}
     %div.information
       %span.title= song.item.title
@@ -9,6 +7,8 @@
       %marquee.voters{scrollamount: 2}
         - if (song.voters)
           != this.partial('voter.html.haml', { collection: song.voters })
+  %a.play_pause.box{href: '#'}
+    %span Play / Pause
   %span.votes.box= song.votes
   %audio{autobuffer: true, controls: false, autoplay: false}
     %source{src: '/public/media/mp3/' + song.item.filename + '.mp3', type: 'audio/mpeg'}
