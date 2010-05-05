@@ -5,6 +5,7 @@ var App = {
 		this.setupPreviewPlayer();
 		this.setupVoteResponder();
 		this.setupStopPollResponder();
+		this.setupMaxVotesResponder();
 
 		this.poll();
 	},
@@ -53,6 +54,29 @@ var App = {
 		});
 		
 	},
+	setupMaxVotesResponder: function(){
+		$("#max").hide();
+		var t;
+		
+		this.registerStatusResponder('maxVotes', function (data) {
+			clearTimeout(t);
+			
+			$("#max").html(data);
+			
+			var lPos = ($(window).width() - $("#max").width()) / 2;
+			var tPos = ($(window).height() - $("#max").height()) / 2;
+			
+			$("#max").css({
+				left: lPos,
+				top: tPos
+			}).fadeIn(100);
+			
+			t = setTimeout(function(){
+				$("#max").fadeOut(100);
+			},2500);
+			
+		});
+	},
 	setupPreviewPlayer: function () {
 		var currentlyPlaying,
 			aEls = $("audio");
@@ -86,7 +110,9 @@ var App = {
 				$(this).addClass('pause');
 				this.currentTime = 0;
 				this.pause();
+				
 			});
+						
 		});
 
 		$('#songs li').each(function (index, event) {
@@ -108,6 +134,7 @@ var App = {
 						} else {
 							$(button).removeClass('pause');
 							this.pause();
+							this.currentTime = 0;
 						}
 						
 					} else {

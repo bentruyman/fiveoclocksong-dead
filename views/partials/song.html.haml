@@ -10,6 +10,6 @@
   %a.play_pause.box{href: '#'}
     %span Play / Pause
   %span.votes.box= song.votes
-  %audio{autobuffer: true, controls: false, autoplay: false}
+  %audio{autobuffer: true, controls: false, autoplay: false, preload: true}
     %source{src: '/public/media/mp3/' + song.item.filename + '.mp3', type: 'audio/mpeg'}
-    %source{src: '/public/media/ogg/' + song.item.filename + '.ogg', type: 'audio/ogg'}
+    %source{src: '/public/media/ogg/' + song.item.filename + '.ogg', type: 'audio/ogg; codecs=vorbis'}

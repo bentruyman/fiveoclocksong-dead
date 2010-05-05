@@ -57,6 +57,30 @@ App = {
 		'Age is foolish and forgetful when it underestimates youth.'
 	],
 	/**
+	 * Messages to be sent to the user when they've hit their max votes for the day
+	 * TODO: insert the actual vote limit in these strings
+	 * 
+	 **/
+	maxMessages: [
+		'What, 20 votes not enough for ya? Sorry, you\'re done for today.',
+		'Ease up, there, chief. You\'ve had your say.',
+		'20 votes per person, per day.  You are not a beautiful and unique snowflake.',
+		'Sorry, you only get 20 votes per day.  C\'mon back tomorrow!',
+		'I get it, you like that song. Maybe you can vote on it again tomorrow.',
+		'Stop clicking me there! I need an adult!',
+		'One person, 20 votes. No more, no less.',
+		'Look me in the eye: do you think you deserve more than everyone else?',
+		'FACT: You\'ve already voted as much as you can today.',
+		'Hey.  What\'s up? Huh? Oh, yeah. You\'re out of votes. Come back tomorrow.',
+		'OK, OK. Come back at 5 and we\'ll see if you gamed the system enough to play your favoritest song.'
+	],
+	/** 
+	 * A cache of today's voters, along with how many times they've voted
+	 * @property voters
+	 *
+	 **/
+	voters: [],
+	/**
 	 * A cache of the poll object used in the current day's poll
 	 * @property poll
 	 */
@@ -147,7 +171,9 @@ App = {
 			},
 			delay: uc.timers.delay * 1000
 		};
-
+		
+		self.configuration.voteLimit = uc.voteLimit;
+		
 		/**
 		 * Determine if there's a poll already made for today
 		 */
@@ -349,6 +375,28 @@ App = {
 		this.poll.songs[options.index].votes++;
 
 		if (options.name) {
+			// check to see if this person has voted today
+			
+			if(App.voters[options.name]){
+				// they have! have they voted less than x times (defined in conf)?
+				if(App.voters[options.name] >= this.configuration.voteLimit){
+					// yes, they have, they're done.  tell them so
+					var amazingRando = App.maxMessages[Math.floor(Math.random() * App.maxMessages.length)]
+					this.statusEmitter.emit('maxVotes', amazingRando);
+					return false;
+					
+				}else{
+					// increment this person's vote
+					App.voters[options.name]++;
+					
+				}
+				
+			}else{
+				// first time this person has voted today - add em to the index
+				App.voters[options.name] = 1;
+				
+			}
+			
 			var voted = false;
 
 			this.poll.songs[options.index].voters.forEach(function (item) {

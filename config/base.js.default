@@ -58,5 +58,9 @@ exports.configuration = {
 	/**
 	 * The number of songs to present to the user each day
 	 */
-	songLimit: 5
+	songLimit: 5,
+	/**
+	 * The maximum number of votes one user can cast
+	 */
+	voteLimit: 20
 };
