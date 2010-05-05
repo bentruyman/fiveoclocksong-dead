@@ -337,7 +337,7 @@ App = {
 
 		this.voteCount = newVoteCount;
 	},
-	vote: function (index) {
+	vote: function (options) {
 		/**
 		 * TODO: This seems really unecessary. Refactor and try again, pal.
 		 * I'm not your pal, guy.
@@ -346,26 +346,25 @@ App = {
 		 * I'm not your buddy, pal.
 		 * ERROR: Too much recursion.
 		 */
-		this.poll.songs[index].votes++;
+		this.poll.songs[options.index].votes++;
 
-		if (this.lastVoter) {
-			var lv = this.lastVoter;
+		if (options.name) {
 			var voted = false;
-			
-			this.poll.songs[index].voters.forEach(function (item) {
-				if (item.name == lv) {
+
+			this.poll.songs[options.index].voters.forEach(function (item) {
+				if (item.name == options.name) {
 					item.count++;
 					voted = true;
 				}
 			});
 
-			if (this.poll.songs[index].voters.length === 0 || voted === false) {
-				this.poll.songs[index].voters.push({name: lv, count: 1});
+			if (this.poll.songs[options.index].voters.length === 0 || voted === false) {
+				this.poll.songs[options.index].voters.push({name: options.name, count: 1});
 			}
 		}
 
-		this.songs[index].votes++;
-		this.songs[index].voters = this.poll.songs[index].voters;
+		this.songs[options.index].votes++;
+		this.songs[options.index].voters = this.poll.songs[options.index].voters;
 		this.updateVoteCountCache();
 
 		var status = {
@@ -398,8 +397,7 @@ get('/', function () {
 });
 
 get('/vote', function () {
-	var self = this,
-		address = self.headers['x-real-ip'] || self.socket.remoteAddress;
+	var self = this;
 
 	if (App.pollActive) {
 		self.render('vote.html.haml', {
@@ -409,9 +407,18 @@ get('/vote', function () {
 		});
 	} else {
 		// get winner's name and vote count
+		 var wIndex = 0, wCount = 0;
+		App.poll.songs.forEach(function (item, index) {
+			if(wCount < item.votes){
+				wCount = item.votes;
+				wIndex = index;
+			}
+		});
+
+		// get winner's name and vote count
 		var wName = '', wCount = 0;
-		App.poll.songs[wIndex].voters.forEach(function (item, index) {
-			if (wCount < item.count) {
+		App.poll.songs[wIndex].voters.forEach(function(item, index){
+			if(wCount < item.count){
 				wCount = item.count;
 				wName = item.name;
 			}
@@ -428,30 +435,30 @@ get('/vote', function () {
 });
 
 post('/vote', function () {
-	App.vote(this.param('index'));
-
-	var self = this,
-		address = self.headers['x-real-ip'] || self.socket.remoteAddress;
-
-	dns.reverse(address, function (err, name) {
-		if (address === '127.0.0.1') {
-			name = 'kingofpain';
-		} else if (err !== null) {
-			name = 'Unknown';
-		}
-
-		// trim off the CMASS stuff
-		var shortName = name.toString().split('.')[0];
-
-		// slice off the dash and machine type (if it exists)
-		shortName = shortName.split('-')[0];
-
-		// tell the App who voted last
-		App.lastVoter = shortName;
-		
-	});
-
 	if (App.pollActive) {
+		var self = this,
+			address = self.headers['x-real-ip'] || self.socket.remoteAddress;
+
+		dns.reverse(address, function (err, name) {
+			if (address === '127.0.0.1') {
+				name = 'kingofpain';
+			} else if (err !== null) {
+				name = 'Unknown';
+			}
+
+			// trim off the CMASS stuff
+			var shortName = name.toString().split('.')[0];
+
+			// slice off the dash and machine type (if it exists)
+			shortName = shortName.split('-')[0];
+
+			// Vote!
+			App.vote({
+				index: self.param('index'),
+				name: shortName
+			});
+		});
+
 		this.respond(200);
 	} else {
 		this.respond(417);

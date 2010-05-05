@@ -15,7 +15,7 @@ html
 body
   :color: #333
   :font bold 14px "Helvetica Neue", Helvetica, Arial,sans-serif
-  :margin-top 35px
+  :margin 15px
 
 a
   :color #333
@@ -26,11 +26,6 @@ audio
   :display none
   :height 0
   :width 0
-
-#wrapper
-  :float left
-  :margin-left 40px
-  :width 90%
 
 #logo
   :font-size 48px
@@ -45,10 +40,11 @@ audio
     :margin-left -12px
     :vertical-align super
 
+!leftColumnWidth = 115px
+!rightColumnWidth = 185px
+
 #songs
-  :margin-bottom 35px
-  :width 100%
-  +clearfix
+  :margin 0 210px 35px 135px
   li
     :height 115px
     :margin-bottom 1px
@@ -59,10 +55,10 @@ audio
       :-ms-filter "progid:DXImageTransform.Microsoft.gradient(startColorStr='#f2f2f2', EndColorStr='#9b9b9b')"
       =box-shadow 0 5px 15px rgba(0, 0, 0, 0.4)
       :box-shadow 0 5px 15px rgba(0, 0, 0, 0.4)
-      :display inline-block
+      :display block
       :float left
       :height 115px
-      :margin-right 1px
+      :position relative
       :-webkit-transition-property color
       :-webkit-transition-duration 0.25s
     .box:hover
@@ -71,19 +67,21 @@ audio
       :color #eee
       :filter progid:DXImageTransform.Microsoft.gradient(startColorStr='#222222', EndColorStr='#444444')
       :-ms-filter "progid:DXImageTransform.Microsoft.gradient(startColorStr='#222222', EndColorStr='#444444')"
+    .information
+      :margin 0 20px
     .play_pause
-      :width 95px
+      :margin-left -!leftColumnWidth
+      :overflow hidden
+      :width !leftColumnWidth
         span
           :background transparent url(/public/images/play_pause.png) no-repeat 0 0
           :display block
-          :height 95px
+          :height 115px
           :text-indent -500em
-          :margin 10px 0 0 0
         .pause
-          :background-position -95px 0px
+          :background-position -115px 0px
     .song
-      :min-width 415px
-      :padding 0 20px
+      :width 100%
       span
         :display block
       .title
@@ -95,9 +93,9 @@ audio
         :opacity 0.5
     .votes
       :font-size 72px
-      :margin-right 0
-      :min-width 120px
-      :padding 10px 15px
+      :margin-right -!rightColumnWidth
+      :width !rightColumnWidth
+      :padding 10px 0
       :cursor default
       :opacity 1
       :text-align center
@@ -111,14 +109,8 @@ audio
       :-webkit-transition-property opacity
       :-webkit-transition-duration .25s
     .voters
-      :display block
-      :clear both
-      :width 100%
+      :display none
       :height 20px
-      :overflow -webkit-marquee
-      :overflow-style marquee-line
-      :marquee-speed fast
-      :marquee-direction reverse
       span
         :display inline
         :font-style italic

@@ -24,28 +24,6 @@ var App = {
 			self.poll();
 		});
 	},
-	stopPoll: function(){
-		// fade out site
-		$("#songs").animate({
-			opacity: 0
-		},1000);
-		
-		
-		// grab results page, remove old content, write new
-		
-		$.get('/',function(data){
-			
-			var newContent = $(data).find("#winner").hide()[0];
-			
-			$("#songs").replaceWith(newContent);
-			
-			$(newContent).fadeIn(500);
-			
-		});
-		
-		
-		
-	},
 	registerStatusResponder: function (statusType, hollaback) {
 		this.statusResponders[statusType] = this.statusResponders[statusType] || [];
 		this.statusResponders[statusType].push(hollaback);
@@ -59,25 +37,29 @@ var App = {
 			}
 		});
 	},
-	setupStopPollResponder: function(){
+	setupStopPollResponder: function() {
 		this.registerStatusResponder('stopPoll', function (data) {
-			try {
-				this.stopPoll();
-			} catch (e) {
-				// You ain't got no console
-			}
+			// fade out site
+			$("#songs").animate({
+				opacity: 0
+			}, 1000);
+
+			// grab results page, remove old content, write new
+			$.get('/',function(data) {
+				var newContent = $(data).find("#winner").hide().get(0);
+				$("#songs").replaceWith(newContent);
+				$(newContent).fadeIn(500);
+			});
 		});
 		
 	},
 	setupPreviewPlayer: function () {
-		var currentlyPlaying;
-
-		var aEls = $("audio");
+		var currentlyPlaying,
+			aEls = $("audio");
 
 		// show controls once video is loaded.  This is indicated on first load via loadeddata event,
 		// or, once cached, via canplaythrough event.  unbind these events after they fire to clean up.
-		
-		$(aEls).each(function(){
+		$(aEls).each(function () {
 			
 			var ppBox = $(".play_pause",$(this).parent());
 
@@ -85,33 +67,23 @@ var App = {
 			$(ppBox).css({
 				width: 0
 			});
-			
-			$(this).bind("loadedmetadata",function(){
+
+			$(this).bind("loadedmetadata",function () {
 				$(ppBox).animate({
-					width: "95px"
+					width: "115px"
 				},200);
 				$(this).unbind("loadeddata");
-
-			}).bind("canplaythrough",function(){
-
+			}).bind("canplaythrough",function () {
 				$(ppBox).animate({
-					width: "95px"
-				},200);
+					width: "115px"
+				}, 200);
 				$(this).unbind("canplaythrough");
-
-			}).bind("ended",function(){
-
+			}).bind("ended",function () {
 				// once play has ended, set the play button back to default, and rewind track
-				$(this).next().css({
-					backgroundPosition: "0px 0px"
-				});
+				$(this).addClass('pause');
 				this.currentTime = 0;
 				this.pause();
-
 			});
-			
-			
-			
 		});
 
 		$('#songs li').each(function (index, event) {
@@ -122,39 +94,33 @@ var App = {
 				//var audio = $('audio', root).get(0);
 				var audios = $('audio');
 				
-				$(audios).each(function(i){
+				$(audios).each(function (i) {
 					var button = $("span",$(this).parent());
 					
-					if(index == i){
+					if (index == i) {
 						
-						if(this.paused){
-							
+						if (this.paused) {
 							$(button).addClass('pause');
 							this.play();
-							
-						}else{
-							
+						} else {
 							$(button).removeClass('pause');
 							this.pause();
-
 						}
 						
-					}else{
-						
+					} else {
 						$(button).removeClass('pause');
 						this.pause();
-						
 					}
 
-				});			
+				});
 				
 				
 			});
 		});
 	},
 	setupVoteResponder: function () {
-		$('marquee').marquee('voters');
-		
+		// $('marquee').marquee('voters'); Causing massive bugs in Chrome
+
 		$('#songs .song').each(function (index) {
 			$(this).mousedown(function (event) {
 				event.preventDefault();
@@ -169,7 +135,7 @@ var App = {
 		this.registerStatusResponder('vote', function (data) {
 			$('#songs li').each(function (index) {
 				var $votes = $('.votes', this),
-					$voters = $('.voters div', this),
+					$voters = $('.voters', this),
 					oldValue = Number($votes.text()),
 					newValue = data.votes[index];
 
@@ -188,7 +154,7 @@ var App = {
 					// Update Voters
 					var html = '';
 					for (var i = 0, j = data.voters[index].length; i < j; i++) {
-						html += '<span>' + data.voters[index][i].name + ' (' + data.voters[index][i].count + ') </span>';
+						html += '<span>' + data.voters[index][i].name + ' (' + data.voters[index][i].count + ')</span>';
 					}
 					$voters.html(html);
 				}
