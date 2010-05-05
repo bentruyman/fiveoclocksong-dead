@@ -35,7 +35,7 @@ exports.configuration = {
 		/**
 		 * The time the poll should start
 		 */
-		start: '8:30',
+		start: '8:00',
 		/**
 		 * The time the poll should end
 		 */

@@ -65,17 +65,20 @@ var App = {
 
 			// only show player controls once the audio has been loaded
 			$(ppBox).css({
-				width: 0
+				width: 0,
+				right: 0
 			});
 
 			$(this).bind("loadedmetadata",function () {
 				$(ppBox).animate({
-					width: "115px"
+					width: "115px",
+					right: "115px"
 				},200);
-				$(this).unbind("loadeddata");
+				$(this).unbind("loadedmetadata");
 			}).bind("canplaythrough",function () {
 				$(ppBox).animate({
-					width: "115px"
+					width: "115px",
+					right: "115px"
 				}, 200);
 				$(this).unbind("canplaythrough");
 			}).bind("ended",function () {
