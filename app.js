@@ -179,8 +179,7 @@ App = {
 		var self = this;
 
 		self.database.link.view('polls', 'by_date', {limit: 1}, function (error, data) {
-			var result = null,
-				poll;
+			var poll = null;
 
 			if (data.total_rows !== 0) {
 				poll = data.rows[0].value;
@@ -214,7 +213,6 @@ App = {
 					type: 'poll',
 					songs: []
 				},
-				result,
 				songs = data.rows;
 				
 			/**
@@ -232,7 +230,7 @@ App = {
 				 * Lovely, looks like we have enough songs. Now lets start
 				 * plucking out random ones to use for today's poll
 				 */
-				for(var i = 0; i < self.configuration.songLimit; i++) {
+				for (var i = 0; i < self.configuration.songLimit; i++) {
 					var song = songs.splice(Math.floor(Math.random() * songs.length), 1);
 					poll.songs.push({
 						id: song[0].id,
@@ -269,8 +267,8 @@ App = {
 			hour = date.getHours();
 			minutes = date.getMinutes();
 			
-			if(minutes.toString().length == 1){
-				minutes = "0" + minutes;
+			if (minutes.toString().length == 1) {
+				minutes = '0' + minutes;
 			}
 			
 			sys.puts('The time is: ' + hour + ':' + minutes);
@@ -301,7 +299,7 @@ App = {
 			hour = date.getHours();
 			minutes = date.getMinutes();
 
-			if(minutes.toString().length == 1){
+			if (minutes.toString().length == 1) {
 				minutes = "0" + minutes;
 			}
 
@@ -350,21 +348,20 @@ App = {
 		 */
 		this.poll.songs[index].votes++;
 
-		if (this.lastVoter){
+		if (this.lastVoter) {
 			var lv = this.lastVoter;
 			var voted = false;
 			
-			this.poll.songs[index].voters.forEach(function(item){
-				if (item.name == lv){
+			this.poll.songs[index].voters.forEach(function (item) {
+				if (item.name == lv) {
 					item.count++;
 					voted = true;
 				}
 			});
 
-			if (this.poll.songs[index].voters.length == 0 || voted == false){
+			if (this.poll.songs[index].voters.length === 0 || voted === false) {
 				this.poll.songs[index].voters.push({name: lv, count: 1});
 			}
-			
 		}
 
 		this.songs[index].votes++;
@@ -404,53 +401,22 @@ get('/vote', function () {
 	var self = this,
 		address = self.headers['x-real-ip'] || self.socket.remoteAddress;
 
-	dns.reverse(address, function(err, name){
-		if(address === '127.0.0.1'){
-			name = 'kingofpain';
-		} else if (err !== null) {
-			name = 'Unknown';
-		}
-
-		// trim off the CMASS stuff
-		var shortName = name.toString().split('.')[0];
-
-		// slice off the dash and machine type (if it exists)
-		shortName = shortName.split('-')[0];
-
-		// tell the App who voted last
-		App.lastVoter = shortName;
-		
-	});
-
-
-	var wIndex = 0,
-	wCount = 0;
-	App.poll.songs.forEach(function (item, index) {
-		if(wCount < item.votes){
-			wCount = item.votes;
-			wIndex = index;
-		}
-	});
-	
-	// get winner's name and vote count
-	var wName = '', wCount = 0;
-	App.poll.songs[wIndex].voters.forEach(function(item, index){
-		if(wCount < item.count){
-			wCount = item.count;
-			wName = item.name;
-		}
-	});
-
-	if(App.pollActive){
-
+	if (App.pollActive) {
 		self.render('vote.html.haml', {
 			locals: {
 				songs: App.songs
 			}
 		});
-		
-	}else{
-				
+	} else {
+		// get winner's name and vote count
+		var wName = '', wCount = 0;
+		App.poll.songs[wIndex].voters.forEach(function (item, index) {
+			if (wCount < item.count) {
+				wCount = item.count;
+				wName = item.name;
+			}
+		});
+
 		self.render('winner.html.haml', {
 			locals: {
 				songs: App.songs[wIndex],
@@ -458,10 +424,7 @@ get('/vote', function () {
 				winnerCount: wCount
 			}
 		});
-
-		
 	}
-
 });
 
 post('/vote', function () {
@@ -470,8 +433,8 @@ post('/vote', function () {
 	var self = this,
 		address = self.headers['x-real-ip'] || self.socket.remoteAddress;
 
-	dns.reverse(address, function(err, name){
-		if(address === '127.0.0.1'){
+	dns.reverse(address, function (err, name) {
+		if (address === '127.0.0.1') {
 			name = 'kingofpain';
 		} else if (err !== null) {
 			name = 'Unknown';
@@ -488,9 +451,9 @@ post('/vote', function () {
 		
 	});
 
-	if(App.pollActive){
+	if (App.pollActive) {
 		this.respond(200);
-	}else{
+	} else {
 		this.respond(417);
 	}
 	
@@ -520,13 +483,13 @@ get('/status', function () {
 	
 });
 
-get('/*.css', function(file){
+get('/*.css', function (file) {
 	this.render(file + '.css.sass', { layout: false });
 });
 
 App.boot();
 
-function inspect (o) {
-  var sys = require('sys');
+function inspect(o) {
+	var sys = require('sys');
 	sys.puts(sys.inspect(o));
 }
