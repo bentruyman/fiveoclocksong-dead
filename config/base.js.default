@@ -1,3 +1,7 @@
+/**
+ * RENAME THIS FILE TO base.js
+ */
+
 exports.configuration = {
 	/**
 	 * Database configuration

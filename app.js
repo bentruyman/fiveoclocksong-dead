@@ -106,7 +106,7 @@ App = {
 	 * in config/app.js
 	 * @property userConfiguration
 	 */
-	userConfiguration: require('./config/app').configuration,
+	userConfiguration: require('./config/base').configuration,
 	/**
 	 * A cache of the total vote count for the current day's poll, used to
 	 * trigger the response on the long poll request
@@ -522,10 +522,6 @@ get('/status', function () {
 
 get('/*.css', function(file){
 	this.render(file + '.css.sass', { layout: false });
-});
-
-get('/error/view', function () {
-	this.render('does.not.exist');
 });
 
 App.boot();
