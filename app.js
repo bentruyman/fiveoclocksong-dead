@@ -63,7 +63,7 @@ App = {
 	 **/
 	maxMessages: [
 		'What, 20 votes not enough for ya? Sorry, you\'re done for today.',
-		'Ease up, there, chief. You\'ve had your say.',
+		'Ease up, there, sunshine. You\'ve had your say.',
 		'20 votes per person, per day.  You are not a beautiful and unique snowflake.',
 		'Sorry, you only get 20 votes per day.  C\'mon back tomorrow!',
 		'I get it, you like that song. Maybe you can vote on it again tomorrow.',
@@ -72,7 +72,13 @@ App = {
 		'Look me in the eye: do you think you deserve more than everyone else?',
 		'FACT: You\'ve already voted as much as you can today.',
 		'Hey.  What\'s up? Huh? Oh, yeah. You\'re out of votes. Come back tomorrow.',
-		'OK, OK. Come back at 5 and we\'ll see if you gamed the system enough to play your favoritest song.'
+		'OK, OK. Come back at 5 and we\'ll see if you gamed the system enough to play your favoritest song.',
+		'Yeah, A.D.D. much? You\'re out of votes.',
+		'Tomorrow\'s gonna be a great day.  You can vote more then!',
+		'It\'s your future... I see... no more votes today. Outlook is good for tomorrow.',
+		'Yes, yes, greatest song EVAR. You\'ve voted 20 times already. I know.',
+		'Honey, no. You\'ve voted enough.',
+		'If it were your birthday today, you\'d get more votes. Too bad I can\'t remember birthdays.'
 	],
 	/** 
 	 * A cache of today's voters, along with how many times they've voted

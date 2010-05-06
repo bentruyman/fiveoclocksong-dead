@@ -159,6 +159,22 @@ var App = {
 				});
 			}).click(function (event) {
 				event.preventDefault();
+			}).bind("mouseenter",function(){
+				$(".title",$(this)).append("<span class=\'hint\'> should win. Click here.</span>");
+				
+			}).bind("mouseleave",function(){
+				$(".hint",$(this)).remove();
+			});
+		});
+
+		$('#songs .votes').each(function (index) {
+			$(this).mousedown(function (event) {
+				event.preventDefault();
+				$.post('/vote', {
+					index: index
+				});
+			}).click(function (event) {
+				event.preventDefault();
 			});
 		});
 

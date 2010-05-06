@@ -92,6 +92,8 @@ audio
         :opacity 0.75
       .album
         :opacity 0.5
+      .hint
+        :display inline
     .votes
       :font-size 72px
       :margin-right -!rightColumnWidth
@@ -105,6 +107,7 @@ audio
       :-webkit-transition-property -webkit-transform
       :-webkit-transition-duration .5s
       :height 95px !important
+      :cursor pointer
     .votes.updated
       :-webkit-transform rotateX(360deg)
       :-webkit-transition-property -webkit-transform
@@ -176,6 +179,10 @@ audio
   :background-color #efefef
   =box-shadow 0 5px 15px rgba(0, 0, 0, 0.4)
   :box-shadow 0 5px 15px rgba(0, 0, 0, 0.4)
+  :background-image -moz-linear-gradient(top, #f2f2f2, #9b9b9b)
+  :background-image -webkit-gradient(linear,left top,left bottom,color-stop(0, #f2f2f2),color-stop(1, #9b9b9b))
+  :filter  progid:DXImageTransform.Microsoft.gradient(startColorStr='#f2f2f2', EndColorStr='#9b9b9b')
+  :-ms-filter "progid:DXImageTransform.Microsoft.gradient(startColorStr='#f2f2f2', EndColorStr='#9b9b9b')"
   
 #footer
   :margin-bottom 35px
