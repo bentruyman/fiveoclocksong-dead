@@ -149,6 +149,8 @@ var App = {
 		});
 	},
 	setupVoteResponder: function () {
+		// $('marquee').marquee('voters'); Causing massive bugs in Chrome
+
 		$('#songs .song').each(function (index) {
 			$(this).mousedown(function (event) {
 				event.preventDefault();
