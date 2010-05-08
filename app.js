@@ -297,8 +297,6 @@ App = {
 				minutes = '0' + minutes;
 			}
 			
-			sys.puts('The time is: ' + hour + ':' + minutes);
-
 			if ((hour >= cte.hour && minutes >= cte.minutes)) {
 				self.stopPoll();
 				clearInterval(interval);
@@ -328,8 +326,6 @@ App = {
 			if (minutes.toString().length == 1) {
 				minutes = "0" + minutes;
 			}
-
-			sys.puts('The time is: ' + hour + ':' + minutes);
 
 			if (hour >= cts.hour && minutes >= cts.minutes && hour < cte.hour && minutes < cte.minutes) {
 				self.startPoll();
