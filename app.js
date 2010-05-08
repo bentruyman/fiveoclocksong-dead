@@ -5,10 +5,11 @@ require('express/plugins');
 
 var dns = require('dns'),
 	events = require('events'),
-	sys = require('sys'),
-	http = require('express/http'),
-	utils = require('express/utils'),
-	couchdb = require('couchdb');
+	sys = require('sys');
+var http = require('express/http'),
+	utils = require('express/utils');
+
+var couchdb = require('./lib/node-couch/lib').CouchDB;
 
 App = {
 	configuration: {},
@@ -143,12 +144,6 @@ App = {
 		}
 	},
 	/**
-	 * Contains the application configuration settings as specified by the user
-	 * in config/app.js
-	 * @property userConfiguration
-	 */
-	userConfiguration: require('./config/base').configuration,
-	/**
 	 * A cache of the total vote count for the current day's poll, used to
 	 * trigger the response on the long poll request
 	 * @property voteCount
@@ -162,23 +157,23 @@ App = {
 	voters: [],
 	boot: function () {
 		var self = this,
-			uc = self.userConfiguration;
-
-		/**
-		 * Establish a connection to the database
-		 */
-		self.database.client = couchdb.createClient(uc.database.port, uc.database.host);
-		self.database.link = self.database.client.db(uc.database.name);
+			sc = self.configuration,
+			uc = require('./config/base').configuration;
 
 		/**
 		 * Parse the user's configuration into a more digestible for the
 		 * application 
 		 */
-		self.configuration.songLimit = uc.songLimit;
-		self.configuration.server = {
+		sc.database = {
+			name: uc.database.name,
+			host: uc.database.host,
+			port: uc.database.port
+		};
+		sc.songLimit = uc.songLimit;
+		sc.server = {
 			statusTimeout: uc.server.statusTimeout * 1000
 		};
-		self.configuration.timers = {
+		sc.timers = {
 			start: {
 				hour: uc.timers.start.split(':')[0],
 				minutes: uc.timers.start.split(':')[1]
@@ -189,9 +184,14 @@ App = {
 			},
 			delay: uc.timers.delay * 1000
 		};
-		
-		self.configuration.voteLimit = uc.voteLimit;
-		
+
+		sc.voteLimit = uc.voteLimit;
+
+		/**
+		 * Establish a connection to the database
+		 */
+		self.database.link = couchdb.db(sc.database.name, 'http://' + sc.database.host + ':' + sc.database.port);
+
 		/**
 		 * Determine if there's a poll already made for today
 		 */
@@ -221,45 +221,49 @@ App = {
 		/**
 		 * Get all songs from database
 		 */
-		self.database.link.view('songs', 'by_title', {}, function (error, data) {
-			var poll = {
-					date: self.getTodaysDate(),
-					type: 'poll',
-					songs: []
-				},
-				songs = data.rows;
-				
-			/**
-			 * Check to make sure we at least have enough songs according to our
-			 * song limit
-			 */
-			if (songs.length < self.configuration.songLimit) {
-				throw new Error('Not enough songs in the database to satisfy the song limit');
-			} else {
+		self.database.link.view('songs/by_title', {
+			success: function (data) {
+				var poll = {
+						date: self.getTodaysDate(),
+						type: 'poll',
+						songs: []
+					},
+					songs = data.rows;
+
 				/**
-				 * Clear out the songs cache.
+				 * Check to make sure we at least have enough songs according to our
+				 * song limit
 				 */
-				self.songs = [];
-				/**
-				 * Lovely, looks like we have enough songs. Now lets start
-				 * plucking out random ones to use for today's poll
-				 */
-				for (var i = 0; i < self.configuration.songLimit; i++) {
-					var song = songs.splice(Math.floor(Math.random() * songs.length), 1);
-					poll.songs.push({
-						id: song[0].id,
-						votes: 0,
-						voters: []
+				if (songs.length < self.configuration.songLimit) {
+					throw new Error('Not enough songs in the database to satisfy the song limit');
+				} else {
+					/**
+					 * Clear out the songs cache.
+					 */
+					self.songs = [];
+					/**
+					 * Lovely, looks like we have enough songs. Now lets start
+					 * plucking out random ones to use for today's poll
+					 */
+					for (var i = 0; i < self.configuration.songLimit; i++) {
+						var song = songs.splice(Math.floor(Math.random() * songs.length), 1);
+						poll.songs.push({
+							id: song[0].id,
+							votes: 0,
+							voters: []
+						});
+					}
+					/**
+					 * Save this carefully crafted poll object into the database
+					 */
+					self.database.link.saveDoc(poll, {
+						success: function (data) {
+							poll._id = data.id;
+							poll._rev = data.rev;
+							hollaback.call(this, poll);
+						}
 					});
 				}
-				/**
-				 * Save this carefully crafted poll object into the database
-				 */
-				self.database.link.saveDoc(poll, function (error, data) {
-					poll._id = data.id;
-					poll._rev = data.rev;
-					hollaback.call(this, poll);
-				});
 			}
 		});
 	},
@@ -270,29 +274,30 @@ App = {
 	getTodaysPoll: function (/* I aint no */ hollaback /* girl */) {
 		var self = this;
 
-		self.database.link.view('polls', 'by_date', {
+		self.database.link.view('polls/by_date', {
 			descending: true,
-			limit: 1
-		}, function (error, data) {
-			var poll = null;
+			limit: 1,
+			success: function (data) {
+				var poll = null;
 
-			if (data.total_rows !== 0) {
-				poll = data.rows[0].value;
-				/**
-				 * Compare the date of the most recent poll to today's date to determine
-				 * if it is in fact today's poll
-				 */
-				if (poll.date === self.getTodaysDate()) { // We all good here
-					hollaback.call(this, poll);
-				} else { // Shucks, we need to make a poll for today
+				if (data.total_rows !== 0) {
+					poll = data.rows[0].value;
+					/**
+					 * Compare the date of the most recent poll to today's date to determine
+					 * if it is in fact today's poll
+					 */
+					if (poll.date === self.getTodaysDate()) { // We all good here
+						hollaback.call(this, poll);
+					} else { // Shucks, we need to make a poll for today
+						self.createTodaysPoll(function (poll) {
+							hollaback.call(this, poll);
+						});
+					}
+				} else { // Yay, we get to create our first poll
 					self.createTodaysPoll(function (poll) {
 						hollaback.call(this, poll);
 					});
 				}
-			} else { // Yay, we get to create our first poll
-				self.createTodaysPoll(function (poll) {
-					hollaback.call(this, poll);
-				});
 			}
 		});
 	},
@@ -363,11 +368,13 @@ App = {
 		 */
 		self.songs = [];
 		self.poll.songs.forEach(function (item, index) {
-			self.database.link.getDoc(item.id, function (error, data) {
-				self.songs[index] = {
-					item: data,
-					votes: item.votes
-				};
+			self.database.link.openDoc(item.id, {
+				success: function (data) {
+					self.songs[index] = {
+						item: data,
+						votes: item.votes
+					};
+				}
 			});
 		});
 	},
@@ -443,6 +450,8 @@ App = {
 		});
 
 		this.statusEmitter.emit('vote', status);
+
+		this.database.link.saveDoc(this.poll);
 	}
 };
 

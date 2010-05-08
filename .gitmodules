@@ -1,6 +1,6 @@
 [submodule "lib/express"]
 	path = lib/express
 	url = git://github.com/visionmedia/express.git
-[submodule "lib/node-couchdb"]
-	path = lib/node-couchdb
-	url = git://github.com/felixge/node-couchdb.git
+[submodule "lib/node-couch"]
+	path = lib/node-couch
+	url = git://github.com/sixtus/node-couch.git
