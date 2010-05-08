@@ -58,21 +58,27 @@ App = {
 	],
 	/**
 	 * Messages to be sent to the user when they've hit their max votes for the day
-	 * TODO: insert the actual vote limit in these strings
+	 * %vl% represents the max vote count
 	 * 
 	 **/
 	maxMessages: [
-		'What, 20 votes not enough for ya? Sorry, you\'re done for today.',
-		'Ease up, there, chief. You\'ve had your say.',
-		'20 votes per person, per day.  You are not a beautiful and unique snowflake.',
-		'Sorry, you only get 20 votes per day.  C\'mon back tomorrow!',
+		'What, %vl% votes not enough for ya? Sorry, you\'re done for today.',
+		'Ease up, there, sunshine. You\'ve had your say.',
+		'%vl% votes per person, per day.  You are not a beautiful and unique snowflake.',
+		'Sorry, you only get %vl% votes per day.  C\'mon back tomorrow!',
 		'I get it, you like that song. Maybe you can vote on it again tomorrow.',
 		'Stop clicking me there! I need an adult!',
-		'One person, 20 votes. No more, no less.',
+		'One person, %vl% votes. No more, no less.',
 		'Look me in the eye: do you think you deserve more than everyone else?',
 		'FACT: You\'ve already voted as much as you can today.',
 		'Hey.  What\'s up? Huh? Oh, yeah. You\'re out of votes. Come back tomorrow.',
-		'OK, OK. Come back at 5 and we\'ll see if you gamed the system enough to play your favoritest song.'
+		'OK, OK. Come back at 5 and we\'ll see if you gamed the system enough to play your favoritest song.',
+		'Yeah, A.D.D. much? You\'re out of votes.',
+		'Tomorrow\'s gonna be a great day.  You can vote more then!',
+		'It\'s your future... I see... no more votes today. Outlook is good for tomorrow.',
+		'Yes, yes, greatest song EVAR. You\'ve voted %vl% times already. I know.',
+		'Honey, no. You\'ve voted enough.',
+		'If it were your birthday today, you\'d get more votes. Too bad I can\'t remember birthdays.'
 	],
 	/** 
 	 * A cache of today's voters, along with how many times they've voted
@@ -99,12 +105,12 @@ App = {
 	 */
 	statusEmitter: {
 		listeners: [],
-		addListener: function (hollaback) {
-			this.listeners.push(hollaback);
+		addListener: function (hollaback, sessionId) {
+			this.listeners.push({id: sessionId, callback: hollaback});
 		},
 		removeListener: function (hollaback) {
 			this.listeners.forEach(function (item, index) {
-				if (item === hollaback) {
+				if (item.callback === hollaback) {
 					this.listeners.splice(index, 1);
 				}
 			});
@@ -112,15 +118,27 @@ App = {
 		removeAllListeners: function () {
 			this.listeners = [];
 		},
-		emit: function (type, data) {
+		emit: function (type, data, sessionId) {
 			var response = {
 				type: type,
 				data: data
 			};
 
-			this.listeners.forEach(function (item) {
-				item.call(App, response);
-			});
+			if(sessionId){
+				
+				this.listeners.forEach(function (item) {
+					if(sessionId === item.id){
+						item.callback.call(App, response);
+					}
+				});
+				
+			}else{
+
+				this.listeners.forEach(function (item) {
+					item.callback.call(App, response);
+				});
+				
+			}
 
 			this.removeAllListeners();
 		}
@@ -368,42 +386,46 @@ App = {
 		 * I'm not your buddy, pal.
 		 * ERROR: Too much recursion.
 		 */
+		
 		this.poll.songs[options.index].votes++;
 
-		if (options.name) {
+		if (options.session.name) {
 			// check to see if this person has voted today
 			
-			if(App.voters[options.name]){
+			if(App.voters[options.session.name]){
 				// they have! have they voted less than x times (defined in conf)?
-				if(App.voters[options.name] >= this.configuration.voteLimit){
+				if(App.voters[options.session.name] >= this.configuration.voteLimit){
 					// yes, they have, they're done.  tell them so
 					var amazingRando = App.maxMessages[Math.floor(Math.random() * App.maxMessages.length)]
-					this.statusEmitter.emit('maxVotes', amazingRando);
+					
+					// replace token with the actual max vote limit count
+					amazingRando = amazingRando.replace('%vl%',this.configuration.voteLimit);
+					this.statusEmitter.emit('maxVotes', amazingRando, options.session.id);
 					return false;
 					
 				}else{
 					// increment this person's vote
-					App.voters[options.name]++;
+					App.voters[options.session.name]++;
 					
 				}
 				
 			}else{
 				// first time this person has voted today - add em to the index
-				App.voters[options.name] = 1;
+				App.voters[options.session.name] = 1;
 				
 			}
 			
 			var voted = false;
 
 			this.poll.songs[options.index].voters.forEach(function (item) {
-				if (item.name == options.name) {
+				if (item.name == options.session.name) {
 					item.count++;
 					voted = true;
 				}
 			});
 
 			if (this.poll.songs[options.index].voters.length === 0 || voted === false) {
-				this.poll.songs[options.index].voters.push({name: options.name, count: 1});
+				this.poll.songs[options.index].voters.push({name: options.session.name, count: 1});
 			}
 		}
 
@@ -437,7 +459,32 @@ configure(function () {
 });
 
 get('/', function () {
+	var self = this,
+	    address = self.headers['x-real-ip'] || self.socket.remoteAddress;
+	
+	if(!self.session.name){
+		
+		dns.reverse(address, function (err, name) {
+			if (address === '127.0.0.1') {
+				name = 'kingofpain';
+			} else if (err !== null) {
+				name = 'Unknown';
+			}
+
+			// trim off the CMASS stuff
+			var shortName = name.toString().split('.')[0];
+
+			// slice off the dash and machine type (if it exists)
+			shortName = shortName.split('-')[0];
+			
+			self.session.name = shortName;
+			
+		});
+		
+	}
+
 	this.pass('/vote');
+	
 });
 
 get('/vote', function () {
@@ -480,27 +527,12 @@ get('/vote', function () {
 
 post('/vote', function () {
 	if (App.pollActive) {
-		var self = this,
-			address = self.headers['x-real-ip'] || self.socket.remoteAddress;
-
-		dns.reverse(address, function (err, name) {
-			if (address === '127.0.0.1') {
-				name = 'kingofpain';
-			} else if (err !== null) {
-				name = 'Unknown';
-			}
-
-			// trim off the CMASS stuff
-			var shortName = name.toString().split('.')[0];
-
-			// slice off the dash and machine type (if it exists)
-			shortName = shortName.split('-')[0];
-
-			// Vote!
-			App.vote({
-				index: self.param('index'),
-				name: shortName
-			});
+		var self = this;
+			
+		// Vote!
+		App.vote({
+			index: self.param('index'),
+			session: self.session
 		});
 
 		this.respond(200);
@@ -512,7 +544,7 @@ post('/vote', function () {
 
 get('/status', function () {
 	var self = this;
-
+	
 	self.contentType('json');
 
 	var hollaback = function (stream) {
@@ -520,7 +552,7 @@ get('/status', function () {
 		self.respond(200, JSON.encode(stream));
 	};
 
-	App.statusEmitter.addListener(hollaback);
+	App.statusEmitter.addListener(hollaback, self.session.id);
 
 	var timeout = setTimeout(function () {
 		App.statusEmitter.removeListener('status', hollaback);
