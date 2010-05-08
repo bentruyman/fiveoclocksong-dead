@@ -29,6 +29,35 @@ App = {
 		 */
 		link: null
 	},
+	/** 
+	 * Holder for the machine name of the last person who voted
+	 * @property lastVoter
+	 */
+	lastVoter: null,
+	/**
+	 * Messages to be sent to the user when they've hit their max votes for the day
+	 * %vl% represents the max vote count
+	 * 
+	 **/
+	maxMessages: [
+		'What, %vl% votes not enough for ya? Sorry, you\'re done for today.',
+		'Ease up, there, sunshine. You\'ve had your say.',
+		'%vl% votes per person, per day.  You are not a beautiful and unique snowflake.',
+		'Sorry, you only get %vl% votes per day.  C\'mon back tomorrow!',
+		'I get it, you like that song. Maybe you can vote on it again tomorrow.',
+		'Stop clicking me there! I need an adult!',
+		'One person, %vl% votes. No more, no less.',
+		'Look me in the eye: do you think you deserve more than everyone else?',
+		'FACT: You\'ve already voted as much as you can today.',
+		'Hey.  What\'s up? Huh? Oh, yeah. You\'re out of votes. Come back tomorrow.',
+		'OK, OK. Come back at 5 and we\'ll see if you gamed the system enough to play your favoritest song.',
+		'Yeah, A.D.D. much? You\'re out of votes.',
+		'Tomorrow\'s gonna be a great day.  You can vote more then!',
+		'It\'s your future... I see... no more votes today. Outlook is good for tomorrow.',
+		'Yes, yes, greatest song EVAR. You\'ve voted %vl% times already. I know.',
+		'Honey, no. You\'ve voted enough.',
+		'If it were your birthday today, you\'d get more votes. Too bad I can\'t remember birthdays.'
+	],
 	/**
 	 * Random messages to be sent when a ping status is sent
 	 * @property pingMessages
@@ -57,49 +86,19 @@ App = {
 		'Age is foolish and forgetful when it underestimates youth.'
 	],
 	/**
-	 * Messages to be sent to the user when they've hit their max votes for the day
-	 * %vl% represents the max vote count
-	 * 
-	 **/
-	maxMessages: [
-		'What, %vl% votes not enough for ya? Sorry, you\'re done for today.',
-		'Ease up, there, sunshine. You\'ve had your say.',
-		'%vl% votes per person, per day.  You are not a beautiful and unique snowflake.',
-		'Sorry, you only get %vl% votes per day.  C\'mon back tomorrow!',
-		'I get it, you like that song. Maybe you can vote on it again tomorrow.',
-		'Stop clicking me there! I need an adult!',
-		'One person, %vl% votes. No more, no less.',
-		'Look me in the eye: do you think you deserve more than everyone else?',
-		'FACT: You\'ve already voted as much as you can today.',
-		'Hey.  What\'s up? Huh? Oh, yeah. You\'re out of votes. Come back tomorrow.',
-		'OK, OK. Come back at 5 and we\'ll see if you gamed the system enough to play your favoritest song.',
-		'Yeah, A.D.D. much? You\'re out of votes.',
-		'Tomorrow\'s gonna be a great day.  You can vote more then!',
-		'It\'s your future... I see... no more votes today. Outlook is good for tomorrow.',
-		'Yes, yes, greatest song EVAR. You\'ve voted %vl% times already. I know.',
-		'Honey, no. You\'ve voted enough.',
-		'If it were your birthday today, you\'d get more votes. Too bad I can\'t remember birthdays.'
-	],
-	/** 
-	 * A cache of today's voters, along with how many times they've voted
-	 * @property voters
-	 *
-	 **/
-	voters: [],
-	/**
 	 * A cache of the poll object used in the current day's poll
 	 * @property poll
 	 */
 	poll: null,
 	/**
+	 * @property pollActive - indicates if a poll is presently running
+	 */
+	pollActive: true,
+	/**
 	 * A cache of all song objects used in the current day's poll
 	 * @property songs
 	 */
 	songs: null,
-	/**
-	 * @property pollActive - indicates if a poll is presently running
-	 */
-	pollActive: true,
 	/**
 	 * @property statusEmitter
 	 */
@@ -156,10 +155,11 @@ App = {
 	 */
 	voteCount: 0,
 	/** 
-	 * Holder for the machine name of the last person who voted
-	 * @property lastVoter
-	 */
-	lastVoter: null,
+	 * A cache of today's voters, along with how many times they've voted
+	 * @property voters
+	 *
+	 **/
+	voters: [],
 	boot: function () {
 		var self = this,
 			uc = self.userConfiguration;
@@ -215,36 +215,6 @@ App = {
 			sys.puts('FOCS has booted.');
 		});
 	},
-	getTodaysDate: function () {
-		var todaysDate = new Date();
-		return (todaysDate.getMonth() + 1) + '/' + todaysDate.getDate() + '/' + todaysDate.getFullYear();
-	},
-	getTodaysPoll: function (/* I aint no */ hollaback /* girl */) {
-		var self = this;
-
-		self.database.link.view('polls', 'by_date', {limit: 1}, function (error, data) {
-			var poll = null;
-
-			if (data.total_rows !== 0) {
-				poll = data.rows[0].value;
-				/**
-				 * Compare the date of the most recent poll to today's date to determine
-				 * if it is in fact today's poll
-				 */
-				if (poll.date === self.getTodaysDate()) { // We all good here
-					hollaback.call(this, poll);
-				} else { // Shucks, we need to make a poll for today
-					self.createTodaysPoll(function (poll) {
-						hollaback.call(this, poll);
-					});
-				}
-			} else { // Yay, we get to create our first poll
-				self.createTodaysPoll(function (poll) {
-					hollaback.call(this, poll);
-				});
-			}
-		});
-	},
 	createTodaysPoll: function (/* I aint no */ hollaback /* girl */) {
 		var self = this;
 
@@ -288,6 +258,36 @@ App = {
 				self.database.link.saveDoc(poll, function (error, data) {
 					poll._id = data.id;
 					poll._rev = data.rev;
+					hollaback.call(this, poll);
+				});
+			}
+		});
+	},
+	getTodaysDate: function () {
+		var todaysDate = new Date();
+		return (todaysDate.getMonth() + 1) + '/' + todaysDate.getDate() + '/' + todaysDate.getFullYear();
+	},
+	getTodaysPoll: function (/* I aint no */ hollaback /* girl */) {
+		var self = this;
+
+		self.database.link.view('polls', 'by_date', {limit: 1}, function (error, data) {
+			var poll = null;
+
+			if (data.total_rows !== 0) {
+				poll = data.rows[0].value;
+				/**
+				 * Compare the date of the most recent poll to today's date to determine
+				 * if it is in fact today's poll
+				 */
+				if (poll.date === self.getTodaysDate()) { // We all good here
+					hollaback.call(this, poll);
+				} else { // Shucks, we need to make a poll for today
+					self.createTodaysPoll(function (poll) {
+						hollaback.call(this, poll);
+					});
+				}
+			} else { // Yay, we get to create our first poll
+				self.createTodaysPoll(function (poll) {
 					hollaback.call(this, poll);
 				});
 			}
@@ -391,28 +391,24 @@ App = {
 
 		if (options.session.name) {
 			// check to see if this person has voted today
-			
-			if(App.voters[options.session.name]){
+			if (App.voters[options.session.name]) {
 				// they have! have they voted less than x times (defined in conf)?
-				if(App.voters[options.session.name] >= this.configuration.voteLimit){
+				if (App.voters[options.session.name] >= this.configuration.voteLimit) {
 					// yes, they have, they're done.  tell them so
-					var amazingRando = App.maxMessages[Math.floor(Math.random() * App.maxMessages.length)]
-					
+					var amazingRando = App.maxMessages[Math.floor(Math.random() * App.maxMessages.length)];
+
 					// replace token with the actual max vote limit count
 					amazingRando = amazingRando.replace('%vl%',this.configuration.voteLimit);
 					this.statusEmitter.emit('maxVotes', amazingRando, options.session.id);
 					return false;
-					
-				}else{
+				} else {
 					// increment this person's vote
 					App.voters[options.session.name]++;
-					
 				}
 				
-			}else{
+			} else {
 				// first time this person has voted today - add em to the index
 				App.voters[options.session.name] = 1;
-				
 			}
 			
 			var voted = false;
