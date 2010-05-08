@@ -270,7 +270,10 @@ App = {
 	getTodaysPoll: function (/* I aint no */ hollaback /* girl */) {
 		var self = this;
 
-		self.database.link.view('polls', 'by_date', {limit: 1}, function (error, data) {
+		self.database.link.view('polls', 'by_date', {
+			descending: true,
+			limit: 1
+		}, function (error, data) {
 			var poll = null;
 
 			if (data.total_rows !== 0) {
