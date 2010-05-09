@@ -1,5 +1,5 @@
 html
-  :background #dedede 
+  :background-color #bbb
 
 +clearfix
   :display inline-block
@@ -13,9 +13,11 @@ html
     :height 1px
 
 body
+  :background-image -moz-linear-gradient(top, #fafafa, #bbb)
+  :background-image -webkit-gradient(linear,left top,left bottom,color-stop(0, #fafafa),color-stop(1, #bbb))
   :color: #333
   :font bold 14px "Helvetica Neue", Helvetica, Arial,sans-serif
-  :margin 15px
+  :padding 15px
 
 a
   :color #333
