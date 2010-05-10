@@ -249,9 +249,6 @@ App = {
 					var allPolls = [];
 					self.getAllPolls(function(polls){
 						
-						inspect("polls");
-						inspect(polls);
-						
 						for (var i = 0; i < self.configuration.songLimit; i++) {
 							var song = songs.splice(Math.floor(Math.random() * songs.length), 1);
 
@@ -265,9 +262,6 @@ App = {
 								voters: []
 							});
 						}
-
-						inspect("poll");
-						inspect(poll);
 
 						/**
 						 * Save this carefully crafted poll object into the database
