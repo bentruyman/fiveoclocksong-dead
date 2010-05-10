@@ -223,6 +223,7 @@ App = {
 		 */
 		self.database.link.view('songs/by_title', {
 			success: function (data) {
+				
 				var poll = {
 						date: self.getTodaysDate(),
 						type: 'poll',
@@ -245,27 +246,67 @@ App = {
 					 * Lovely, looks like we have enough songs. Now lets start
 					 * plucking out random ones to use for today's poll
 					 */
-					for (var i = 0; i < self.configuration.songLimit; i++) {
-						var song = songs.splice(Math.floor(Math.random() * songs.length), 1);
-						poll.songs.push({
-							id: song[0].id,
-							votes: 0,
-							voters: []
-						});
-					}
-					/**
-					 * Save this carefully crafted poll object into the database
-					 */
-					self.database.link.saveDoc(poll, {
-						success: function (data) {
-							poll._id = data.id;
-							poll._rev = data.rev;
-							hollaback.call(this, poll);
+					var allPolls = [];
+					self.getAllPolls(function(polls){
+						
+						inspect("polls");
+						inspect(polls);
+						
+						for (var i = 0; i < self.configuration.songLimit; i++) {
+							var song = songs.splice(Math.floor(Math.random() * songs.length), 1);
+
+							while(polls.indexOf(song[0].id) != -1){
+								song = songs.splice(Math.floor(Math.random() * songs.length), 1);
+							}
+							
+							poll.songs.push({
+								id: song[0].id,
+								votes: 0,
+								voters: []
+							});
 						}
+
+						inspect("poll");
+						inspect(poll);
+
+						/**
+						 * Save this carefully crafted poll object into the database
+						 */
+						self.database.link.saveDoc(poll, {
+							success: function (data) {
+								poll._id = data.id;
+								poll._rev = data.rev;
+								hollaback.call(this, poll);
+							}
+						});
+
+
 					});
+					
 				}
 			}
 		});
+	},
+	getLastPolls: function (/* I aint no */ hollaback /* girl */) {
+		/** 
+		 * Get the last %limit% polls, so we don't repeat songs within a week.
+		 **/
+		var self = this;
+
+		self.database.link.view('polls/by_date', {
+			descending: true,
+			limit: 7,
+			success: function (data) {
+				var polls = null;
+
+				if (data.total_rows !== 0) {
+					var polls = data.rows;
+					hollaback.call(this, polls);
+				}
+
+			}
+		});
+	
 	},
 	getTodaysDate: function () {
 		var todaysDate = new Date();
