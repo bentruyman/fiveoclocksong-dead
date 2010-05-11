@@ -250,33 +250,23 @@ App = {
 					 */
 					self.getLastPolls(function(polls){
 						
-						if(polls){
+						for (var i = 0; i < self.configuration.songLimit; i++) {
+							var song = songs.splice(Math.floor(Math.random() * songs.length), 1);
 							
-							for (var i = 0; i < self.configuration.songLimit; i++) {
-								var song = songs.splice(Math.floor(Math.random() * songs.length), 1);
-
+							if(polls){
 								while(polls.indexOf(song[0].id) != -1){
 									song = songs.splice(Math.floor(Math.random() * songs.length), 1);
-								}
-
-								poll.songs.push({
-									id: song[0].id,
-									votes: 0,
-									voters: []
-								});
+								}									
 							}
 							
-							
-						}else{
-							var song = songs.splice(Math.floor(Math.random() * songs.length), 1);
+
 							poll.songs.push({
 								id: song[0].id,
 								votes: 0,
 								voters: []
 							});
-							
 						}
-						
+													
 
 
 						/**
