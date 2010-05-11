@@ -245,23 +245,39 @@ App = {
 					/**
 					 * Lovely, looks like we have enough songs. Now lets start
 					 * plucking out random ones to use for today's poll
+					 * However, we want to only select songs that haven't been used
+					 * in the last x days (x is defined down in getLastPolls).
 					 */
-					var allPolls = [];
 					self.getLastPolls(function(polls){
 						
-						for (var i = 0; i < self.configuration.songLimit; i++) {
-							var song = songs.splice(Math.floor(Math.random() * songs.length), 1);
+						if(polls){
+							
+							for (var i = 0; i < self.configuration.songLimit; i++) {
+								var song = songs.splice(Math.floor(Math.random() * songs.length), 1);
 
-							while(polls.indexOf(song[0].id) != -1){
-								song = songs.splice(Math.floor(Math.random() * songs.length), 1);
+								while(polls.indexOf(song[0].id) != -1){
+									song = songs.splice(Math.floor(Math.random() * songs.length), 1);
+								}
+
+								poll.songs.push({
+									id: song[0].id,
+									votes: 0,
+									voters: []
+								});
 							}
 							
+							
+						}else{
+							var song = songs.splice(Math.floor(Math.random() * songs.length), 1);
 							poll.songs.push({
 								id: song[0].id,
 								votes: 0,
 								voters: []
 							});
+							
 						}
+						
+
 
 						/**
 						 * Save this carefully crafted poll object into the database
@@ -273,7 +289,6 @@ App = {
 								hollaback.call(this, poll);
 							}
 						});
-
 
 					});
 					
@@ -296,6 +311,8 @@ App = {
 				if (data.total_rows !== 0) {
 					var polls = data.rows;
 					hollaback.call(this, polls);
+				}else{
+					hollaback.call(this, false);
 				}
 
 			}
