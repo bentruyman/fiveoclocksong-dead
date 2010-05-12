@@ -282,6 +282,7 @@ App = {
 
 					});
 					
+					self.pollActive = true;
 				}
 			}
 		});
