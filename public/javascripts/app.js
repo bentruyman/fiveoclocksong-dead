@@ -5,6 +5,7 @@ var App = {
 		this.setupPreviewPlayer();
 		this.setupVoteResponder();
 		this.setupStopPollResponder();
+		this.setupStartPollResponder();
 		this.setupMaxVotesResponder();
 
 		this.poll();
@@ -37,6 +38,22 @@ var App = {
 				// You ain't got no console
 			}
 		});
+	},
+	setupStartPollResponder: function() {
+		this.registerStatusResponder('startPoll', function (data) {
+			// fade out site
+			$("#winner").animate({
+				opacity: 0
+			}, 1000);
+
+			// grab results page, remove old content, write new
+			$.get('/',function(data) {
+				var newContent = $(data).find("#songs").hide().get(0);
+				$("#winner").replaceWith(newContent);
+				$(newContent).fadeIn(500);
+			});
+		});
+		
 	},
 	setupStopPollResponder: function() {
 		this.registerStatusResponder('stopPoll', function (data) {
@@ -150,7 +167,7 @@ var App = {
 	},
 	setupVoteResponder: function () {
 		// $('marquee').marquee('voters'); Causing massive bugs in Chrome
-
+				
 		$('#songs .song').each(function (index) {
 			$(this).mousedown(function (event) {
 				event.preventDefault();

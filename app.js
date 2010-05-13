@@ -354,6 +354,8 @@ App = {
 
 		this.pollActive = true;
 
+		this.statusEmitter.emit('stopPoll', true);
+
 		/**
 		 * Start the timer to check for the "end of the day"
 		 */
@@ -370,6 +372,7 @@ App = {
 				self.stopPoll();
 				clearInterval(interval);
 			}
+			
 		}, self.configuration.timers.delay);
 	},
 	stopPoll: function () {
@@ -395,6 +398,8 @@ App = {
 			if (minutes.toString().length == 1) {
 				minutes = "0" + minutes;
 			}
+
+			inspect(hour >= cts.hour && minutes >= cts.minutes && hour < cte.hour && minutes < cte.minutes);
 
 			if (hour >= cts.hour && minutes >= cts.minutes && hour < cte.hour && minutes < cte.minutes) {
 				self.startPoll();
