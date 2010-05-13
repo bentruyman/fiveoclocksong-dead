@@ -99,6 +99,8 @@ App = {
 	 * A cache of all song objects used in the current day's poll
 	 * @property songs
 	 */
+	pollEnd: 0,
+	pollStart: 0,
 	songs: null,
 	/**
 	 * @property statusEmitter
@@ -344,17 +346,26 @@ App = {
 			}
 		});
 	},
+	setPollTimers: function(today){
+		self = this;
+		
+		self.pollStart = Date.parse( (today.getMonth() + 1) + "/" + (today.getDate() + 1) + "/" + today.getFullYear() + " " + self.configuration.timers.start.hour + ":" + self.configuration.timers.start.minutes);
+		self.pollEnd = Date.parse((today.getMonth() + 1) + "/" + today.getDate() + "/" + today.getFullYear() + " " + self.configuration.timers.end.hour + ":" + self.configuration.timers.end.minutes);
+	},
 	startPoll: function () {
 		var self = this,
 			cts = self.configuration.timers.start,
 			cte = self.configuration.timers.end,
 			date, hour, minutes;
-
+		
+		var today = new Date();
+		self.setPollTimers(today);
+		
 		sys.puts('Starting poll...');
 
 		this.pollActive = true;
 
-		this.statusEmitter.emit('stopPoll', true);
+		this.statusEmitter.emit('startPoll', true);
 
 		/**
 		 * Start the timer to check for the "end of the day"
@@ -364,11 +375,10 @@ App = {
 			hour = date.getHours();
 			minutes = date.getMinutes();
 			
-			if (minutes.toString().length == 1) {
-				minutes = '0' + minutes;
-			}
+			now = Date.parse(date);
 			
-			if ((hour >= cte.hour && minutes >= cte.minutes)) {
+			//if ((hour >= parseInt(cte.hour) && minutes >= parseInt(cte.minutes))) {
+			if (now >= self.pollEnd) {
 				self.stopPoll();
 				clearInterval(interval);
 			}
@@ -380,6 +390,9 @@ App = {
 			cts = self.configuration.timers.start,
 			cte = self.configuration.timers.end,
 			date, hour, minutes;
+
+		var today = new Date();
+		self.setPollTimers(today);
 
 		sys.puts('Stopping poll...');
 		
@@ -395,13 +408,10 @@ App = {
 			hour = date.getHours();
 			minutes = date.getMinutes();
 
-			if (minutes.toString().length == 1) {
-				minutes = "0" + minutes;
-			}
+			now = Date.parse(date);
 
-			inspect(hour >= cts.hour && minutes >= cts.minutes && hour < cte.hour && minutes < cte.minutes);
-
-			if (hour >= cts.hour && minutes >= cts.minutes && hour < cte.hour && minutes < cte.minutes) {
+			//if (hour >= parseInt(cts.hour) && minutes >= parseInt(cts.minutes) && hour < parseInt(cte.hour) && minutes < parseInt(cte.minutes)) {
+			if (now >= self.pollStart) {
 				self.startPoll();
 				clearInterval(interval);
 			}
