@@ -31,6 +31,11 @@ App = {
 		link: null
 	},
 	/** 
+	 * The global interval that determines what state the application should be in
+	 * @property interval
+	 */
+	interval: null,
+	/** 
 	 * Holder for the machine name of the last person who voted
 	 * @property lastVoter
 	 */
@@ -38,8 +43,7 @@ App = {
 	/**
 	 * Messages to be sent to the user when they've hit their max votes for the day
 	 * %vl% represents the max vote count
-	 * 
-	 **/
+	 */
 	maxMessages: [
 		'What, %vl% votes not enough for ya? Sorry, you\'re done for today.',
 		'Ease up, there, sunshine. You\'ve had your say.',
@@ -94,7 +98,7 @@ App = {
 	/**
 	 * @property pollActive - indicates if a poll is presently running
 	 */
-	pollActive: true,
+	pollActive: null,
 	/**
 	 * A cache of all song objects used in the current day's poll
 	 * @property songs
@@ -171,6 +175,7 @@ App = {
 			host: uc.database.host,
 			port: uc.database.port
 		};
+		sc.privateKey = uc.privateKey;
 		sc.songLimit = uc.songLimit;
 		sc.server = {
 			statusTimeout: uc.server.statusTimeout * 1000
@@ -195,27 +200,28 @@ App = {
 		self.database.link = couchdb.db(sc.database.name, 'http://' + sc.database.host + ':' + sc.database.port);
 
 		/**
-		 * Determine if there's a poll already made for today
+		 * Run the Express application
 		 */
-		self.getTodaysPoll(function (poll) {
-			/**
-			 * Save our poll to an application's property that can be used
-			 * throughout out app
-			 */
-			self.poll = poll;
+		run();
 
-			self.updateSongCache();
-			self.updateVoteCountCache();
+		sys.puts('FOCS has booted.');
 
-			self.startPoll();
+		/**
+		 * Start the global interval
+		 */
+		this.interval = setInterval(function () {
+			var now = Date.parse(new Date());
 
-			/**
-			 * Run the Express application
-			 */
-			run();
+			self.setPollTimers(new Date());
 
-			sys.puts('FOCS has booted.');
-		});
+			if (now >= self.pollStart) {
+				self.startPoll();
+			} else if (now >= self.pollEnd) {
+				self.stopPoll();
+			} else if (!self.pollActive) {
+				self.startPoll();
+			}
+		}, self.configuration.timers.delay);
 	},
 	createTodaysPoll: function (/* I aint no */ hollaback /* girl */) {
 		var self = this;
@@ -268,8 +274,6 @@ App = {
 								voters: []
 							});
 						}
-													
-
 
 						/**
 						 * Save this carefully crafted poll object into the database
@@ -283,8 +287,6 @@ App = {
 						});
 
 					});
-					
-					self.pollActive = true;
 				}
 			}
 		});
@@ -353,69 +355,38 @@ App = {
 		self.pollEnd = Date.parse((today.getMonth() + 1) + "/" + today.getDate() + "/" + today.getFullYear() + " " + self.configuration.timers.end.hour + ":" + self.configuration.timers.end.minutes);
 	},
 	startPoll: function () {
-		var self = this,
-			cts = self.configuration.timers.start,
-			cte = self.configuration.timers.end,
-			date, hour, minutes;
-		
-		var today = new Date();
-		self.setPollTimers(today);
+		var self = this;
+
+		self.setPollTimers(new Date());
 		
 		sys.puts('Starting poll...');
 
-		this.pollActive = true;
-
-		this.statusEmitter.emit('startPoll', true);
-
 		/**
-		 * Start the timer to check for the "end of the day"
+		 * Determine if there's a poll already made for today
 		 */
-		var interval = setInterval(function () {
-			date = new Date();
-			hour = date.getHours();
-			minutes = date.getMinutes();
-			
-			now = Date.parse(date);
-			
-			//if ((hour >= parseInt(cte.hour) && minutes >= parseInt(cte.minutes))) {
-			if (now >= self.pollEnd) {
-				self.stopPoll();
-				clearInterval(interval);
-			}
-			
-		}, self.configuration.timers.delay);
+		self.getTodaysPoll(function (poll) {
+			/**
+			 * Save our poll to an application's property that can be used
+			 * throughout out app
+			 */
+			self.poll = poll;
+
+			self.updateSongCache();
+			self.updateVoteCountCache();
+
+			self.pollActive = true;
+
+			self.statusEmitter.emit('startPoll', true);
+		});
 	},
 	stopPoll: function () {
-		var self = this,
-			cts = self.configuration.timers.start,
-			cte = self.configuration.timers.end,
-			date, hour, minutes;
-
-		var today = new Date();
-		self.setPollTimers(today);
+		this.setPollTimers(new Date());
 
 		sys.puts('Stopping poll...');
-		
+
 		this.pollActive = false;
 
 		this.statusEmitter.emit('stopPoll', true);
-
-		/**
-		 * Start the timer to check for the "beginning of the day"
-		 */
-		var interval = setInterval(function () {
-			date = new Date();
-			hour = date.getHours();
-			minutes = date.getMinutes();
-
-			now = Date.parse(date);
-
-			//if (hour >= parseInt(cts.hour) && minutes >= parseInt(cts.minutes) && hour < parseInt(cte.hour) && minutes < parseInt(cte.minutes)) {
-			if (now >= self.pollStart) {
-				self.startPoll();
-				clearInterval(interval);
-			}
-		}, self.configuration.timers.delay);
 	},
 	updateSongCache: function () {
 		var self = this;
@@ -634,6 +605,17 @@ get('/status', function () {
 
 get('/*.css', function (file) {
 	this.render(file + '.css.sass', { layout: false });
+});
+
+get('/rmi', function () {
+	var method = this.params.get.method,
+		key = this.params.get.key;
+	if (method && key === App.configuration.privateKey) {
+		App[method].call(App);
+		this.respond(202);
+	} else {
+		this.respond(530);
+	}
 });
 
 App.boot();

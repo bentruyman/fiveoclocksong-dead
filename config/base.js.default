@@ -20,6 +20,10 @@ exports.configuration = {
 		 */
 		name: 'fiveoclocksongs'
 	},
+	/**
+	 * The private key used for RMI
+	 */
+	privateKey: 'ABC123',
 	server: {
 		/**
 		 * How long (in seconds) the server should wait before it closes the
