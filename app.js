@@ -425,8 +425,13 @@ App = {
 		 * I'm not your buddy, pal.
 		 * ERROR: Too much recursion.
 		 */
-		
-		this.poll.songs[options.index].votes++;
+
+		function vote () {
+			this.poll.songs[options.index].votes++;
+			this.songs[options.index].votes++;
+			this.songs[options.index].voters = this.poll.songs[options.index].voters;
+			this.updateVoteCountCache();
+		}
 
 		if (options.session.name) {
 			// check to see if this person has voted today
@@ -443,11 +448,13 @@ App = {
 				} else {
 					// increment this person's vote
 					App.voters[options.session.name]++;
+					vote();
 				}
 				
 			} else {
 				// first time this person has voted today - add em to the index
 				App.voters[options.session.name] = 1;
+				vote();
 			}
 			
 			var voted = false;
@@ -463,10 +470,6 @@ App = {
 				this.poll.songs[options.index].voters.push({name: options.session.name, count: 1});
 			}
 		}
-
-		this.songs[options.index].votes++;
-		this.songs[options.index].voters = this.poll.songs[options.index].voters;
-		this.updateVoteCountCache();
 
 		var status = {
 			votes: [],
