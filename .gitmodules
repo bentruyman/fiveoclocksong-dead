@@ -4,3 +4,6 @@
 [submodule "lib/node-couch"]
 	path = lib/node-couch
 	url = git://github.com/sixtus/node-couch.git
+[submodule "lib/node-promise"]
+	path = lib/node-promise
+	url = http://github.com/kriszyp/node-promise.git
