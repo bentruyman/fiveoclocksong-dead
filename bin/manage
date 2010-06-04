@@ -1,0 +1,196 @@
+#!/usr/bin/env node
+
+// Core
+var exec = require('child_process').exec,
+	fs = require('fs'),
+	path = require('path'),
+	sys = require('sys');
+
+// Constants
+var BASE_PATH = path.normalize(__dirname + '/..');
+
+// Configuration
+var configuration = require(BASE_PATH + '/config/base').configuration;
+
+// node-couch
+var couchdb = require('../lib/node-couch/lib').CouchDB,
+	db = couchdb.db(configuration.database.name);
+couchdb.debug = false;
+
+// node-promise
+var Promise = require('../lib/node-promise/promise').Promise,
+	all = require('../lib/node-promise/promise').all;
+
+switch (process.argv[2]) {
+case 'install':
+	sys.puts('======================================================');
+	sys.puts('= INSTALLING =========================================');
+	sys.puts('======================================================');
+
+	// Determine if the database has already been created
+	var existencePromise = new Promise();
+	db.info({
+		error: function (error) {
+			if (error.reason === 'no_db_file') {
+				db.create({
+					error: function (error) {
+						sys.puts('Error while creating database: ' + error.reason);
+					},
+					success: function (success) {
+						sys.puts('Created "' + configuration.database.name + '" database successfully.');
+						existencePromise.resolve();
+					}
+				});
+			}
+		},
+		success: function () {
+			existencePromise.resolve();
+		}
+	});
+
+	// Create the design documents
+	existencePromise.then(function () {
+		// Polls
+		var pollsPromise = new Promise();
+		db.saveDoc({
+			_id: '_design/polls',
+			language: 'javascript',
+			views: {
+				by_date: {
+					map: function (doc) {
+						if (doc.type === 'poll') {
+							emit(doc.date, doc);
+						}
+					}
+				}
+			}
+		}, {
+			error: function (error) {
+				sys.puts('Error while creating "polls" view: ' + error.reason);
+			},
+			success: function (success) {
+				sys.puts('Created "polls" view successfully.');
+				pollsPromise.resolve();
+			}
+		});
+
+		// Songs
+		var songsPromise = new Promise();
+		db.saveDoc({
+			_id: '_design/songs',
+			language: 'javascript',
+			views: {
+				by_title: {
+					map: function (doc) {
+						if (doc.type === 'song') {
+							emit(doc.title, doc);
+						}
+					}
+				}
+			}
+		}, {
+			error: function (error) {
+				sys.puts('Error while creating "songs" view: ' + error.reason);
+			},
+			success: function (success) {
+				sys.puts('Created "songs" view successfully.');
+				songsPromise.resolve();
+			}
+		});
+
+		// Design Documents complete
+		all([pollsPromise, songsPromise]).then(function () {
+			sys.puts('Finished installing site. Enjoy!');
+		});
+	});
+
+	break;
+case 'deploy_songs':
+	sys.puts('======================================================');
+	sys.puts('= DEPLOYING SONGS ====================================');
+	sys.puts('======================================================');
+
+	var MEDIA_PATH = BASE_PATH + '/public/media',
+		MUSIC_PATH = BASE_PATH + '/tmp/music',
+		fileNames = fs.readdirSync(MUSIC_PATH),
+		songNames = [];
+
+	fileNames.forEach(function (name) {
+		if (name.match(/.*\.mp3$/)) {
+			songNames.push(name);
+		}
+	});
+
+	sys.puts('Found ' + songNames.length + ' songs to be deployed.');
+
+	songNames.forEach(function (name) {
+			// Clean up the filenames
+		var renamed = name.replace(/\s/g, '_').replace(/[^a-zA-Z0-9_.]/g, '').replace('.mp3', '').toLowerCase();
+
+		// Check to see if the song already exists
+		db.view('songs/by_title', {
+			key: renamed,
+			success: function (results) {
+				if (results.rows.length === 0) {
+					var song = {
+						album: null,
+						artist: null,
+						filename: renamed,
+						title: null,
+						type: 'song'
+					};
+
+					var child = exec('id3info "' + MUSIC_PATH + '/' + name + '"', function (error, stdout, stderr) {
+						var tags = stdout.split("\n");
+
+						tags.forEach(function (tag) {
+							if (tag.match('TIT2')) {
+								song.title = tag.replace('=== TIT2 (Title/songname/content description): ', '');
+							} else if (tag.match('TT2')) {
+								song.title = tag.replace('=== TT2 (Title/songname/content description): ', '');
+							} else if (tag.match('TPE1')) {
+								song.artist = tag.replace('=== TPE1 (Lead performer(s)/Soloist(s)): ', '');
+							} else if (tag.match('TP1')) {
+								song.artist = tag.replace('=== TP1 (Lead performer(s)/Soloist(s)): ', '');
+							} else if (tag.match('TALB')) {
+								song.album = tag.replace('=== TALB (Album/Movie/Show title): ', '');
+							}
+						});
+
+						var MP3 = MEDIA_PATH + '/mp3/' + renamed + '.mp3',
+							OGG = MEDIA_PATH + '/ogg/' + renamed + '.ogg';
+
+						// Move the song over to the media directory
+						fs.rename(MUSIC_PATH + '/' + name, MP3, function (err) {
+							
+							if (!err) {
+								// Create an OGG version
+								var child = exec('ffmpeg -i ' + MP3 + ' ' + OGG, function (error, stdout, stderr) {
+									// inspect(song);
+									// Create a document for the song
+									db.saveDoc(song, {
+										error: function (error) {
+											inspect(error);
+										},
+										success: function (data) {
+											sys.puts('Saved song: "' + song.filename + '"');
+										}
+									});
+								});
+							}
+						});
+					});
+				} else {
+					sys.puts('Song already found: "' + renamed + '"');
+				}
+			}
+		});
+	});
+
+	break;
+}
+
+function inspect(o) {
+	var sys = require('sys');
+	sys.puts(sys.inspect(o));
+}

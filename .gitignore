@@ -9,3 +9,4 @@ config/*.js
 *.mp3
 *.m4a
 *.ogg
+*.m4p
