@@ -425,12 +425,13 @@ App = {
 		 * I'm not your buddy, pal.
 		 * ERROR: Too much recursion.
 		 */
+		var self = this;
 
 		function vote () {
-			this.poll.songs[options.index].votes++;
-			this.songs[options.index].votes++;
-			this.songs[options.index].voters = this.poll.songs[options.index].voters;
-			this.updateVoteCountCache();
+			self.poll.songs[options.index].votes++;
+			self.songs[options.index].votes++;
+			self.songs[options.index].voters = self.poll.songs[options.index].voters;
+			self.updateVoteCountCache();
 		}
 
 		if (options.session.name) {
