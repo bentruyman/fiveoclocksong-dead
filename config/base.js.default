@@ -18,7 +18,7 @@ exports.configuration = {
 		/**
 		 * Name of the CouchDB database
 		 */
-		name: 'fiveoclocksongs'
+		name: 'fiveoclocksong'
 	},
 	/**
 	 * The private key used for RMI
