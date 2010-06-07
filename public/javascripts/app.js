@@ -177,7 +177,7 @@ var App = {
 			}).click(function (event) {
 				event.preventDefault();
 			}).bind("mouseenter",function(){
-				$(".title",$(this)).append("<span class=\'hint\'> should win. Click here.</span>");
+				$(".title",$(this)).append("<span class=\'hint\'> should win.</span>");
 				
 			}).bind("mouseleave",function(){
 				$(".hint",$(this)).remove();

@@ -262,9 +262,21 @@ App = {
 							var song = songs.splice(Math.floor(Math.random() * songs.length), 1);
 							
 							if(polls){
-								while(polls.indexOf(song[0].id) != -1){
+								
+								var pollIds = Array();
+								polls.forEach(function(item,index){
+									var songs = item.value.songs;
+									if(songs){
+										songs.forEach(function(s,i){
+											pollIds.push(s.id);
+										});
+									}
+								});
+
+								while(pollIds.indexOf(song[0].id) != -1){
 									song = songs.splice(Math.floor(Math.random() * songs.length), 1);
-								}									
+								}
+																	
 							}
 							
 
