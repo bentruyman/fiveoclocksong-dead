@@ -10,3 +10,5 @@ config/*.js
 *.m4a
 *.ogg
 *.m4p
+*.wav
+*.supported
