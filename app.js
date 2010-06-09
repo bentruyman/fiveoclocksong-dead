@@ -132,17 +132,15 @@ App = {
 			};
 			
 			if(sessionId){
-					
 				this.listeners.forEach(function (item) {
 				
 					if(sessionId === item.id){
 						item.callback.call(App, response);
 					}
-				
 				});
 			
 				this.removeAllListeners();
-			
+				
 			}else{
 
 				this.listeners.forEach(function (item) {
@@ -150,7 +148,6 @@ App = {
 				});
 				
 			}
-
 			
 		}
 	},
