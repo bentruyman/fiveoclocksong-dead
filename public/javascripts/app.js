@@ -2,6 +2,7 @@ var App = {
 	statusResponders: {},
 	boot: function () {
 		this.setupPingResponder();
+		this.setupAchievementListener();
 		this.setupPreviewPlayer();
 		this.setupVoteResponder();
 		this.setupStopPollResponder();
@@ -14,6 +15,7 @@ var App = {
 		var self = this;
 
 		$.getJSON('/status', function (response) {
+			
 			// Iterate through potential responders
 			if (self.statusResponders[response.type]) {
 				var responders = self.statusResponders[response.type];
@@ -36,6 +38,17 @@ var App = {
 				console.log(data.message);
 			} catch (e) {
 				// You ain't got no console
+			}
+		});
+	},
+	setupAchievementListener: function(){
+		$("#achievement").hide();
+
+		this.registerStatusResponder('achievement', function (data) {
+			try {
+				this.showAchievement(data);
+			} catch (e) {
+				// You ain't got no achievement
 			}
 		});
 	},
@@ -223,6 +236,34 @@ var App = {
 				}
 			});
 		});
+	},
+	showAchievement: function(data){
+		
+		console.log("Achievement Unlocked!");
+		console.log(data);
+		
+		// populate achievement
+		
+		var cheevo = "<img src=\"/public/images/achievements/" + data.value.icon + "\" />";
+		cheevo += "<div class=\"content\">";
+		cheevo += "<div class=\"title\">" + data.value.friendly_name + "</div>";
+		cheevo += "<div class=\"desc\">" + data.value.desc + "</div>";
+		cheevo += "</div>";
+		
+		$("#achievement").html(cheevo);
+		
+		var lPos = ($(window).width() - $("#achievement").width()) / 2;
+		
+		$("#achievement").css({
+			left: lPos,
+			bottom: "50px"
+		}).fadeIn(200);
+		
+		t = setTimeout(function(){
+			$("#achievement").fadeOut(100);
+		},2500);
+		
+		
 	}
 };
 

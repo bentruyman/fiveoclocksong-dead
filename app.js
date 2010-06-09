@@ -12,6 +12,7 @@ var http = require('express/http'),
 var couchdb = require('./lib/node-couch/lib').CouchDB;
 
 App = {
+	achievements: {},
 	configuration: {},
 	/**
 	 * Contains various links to the CouchDB database resources used throughout
@@ -114,10 +115,10 @@ App = {
 		addListener: function (hollaback, sessionId) {
 			this.listeners.push({id: sessionId, callback: hollaback});
 		},
-		removeListener: function (hollaback) {
+		removeListener: function (type, hollaback) {
 			this.listeners.forEach(function (item, index) {
 				if (item.callback === hollaback) {
-					this.listeners.splice(index, 1);
+					App.statusEmitter.listeners.splice(index, 1);
 				}
 			});
 		},
@@ -129,15 +130,19 @@ App = {
 				type: type,
 				data: data
 			};
-
+			
 			if(sessionId){
-				
+					
 				this.listeners.forEach(function (item) {
+				
 					if(sessionId === item.id){
 						item.callback.call(App, response);
 					}
-				});
 				
+				});
+			
+				this.removeAllListeners();
+			
 			}else{
 
 				this.listeners.forEach(function (item) {
@@ -146,7 +151,7 @@ App = {
 				
 			}
 
-			this.removeAllListeners();
+			
 		}
 	},
 	/**
@@ -222,6 +227,24 @@ App = {
 				self.startPoll();
 			}
 		}, self.configuration.timers.delay);
+		
+		
+		// get achievements from DB, parse config js for achievement conditions
+		self.database.link.view('achievements/by_name', {
+			descending: true,
+			success: function (data) {
+				self.achievements = data.rows;
+				
+				self.achievements.each(function(item,index){
+					
+					ach = require('./config/achievements/' + item.value.name);
+					self.achievements[index].handler = ach;
+					
+				});
+				
+			}
+		});
+		
 	},
 	createTodaysPoll: function (/* I aint no */ hollaback /* girl */) {
 		var self = this;
@@ -438,12 +461,54 @@ App = {
 		 * ERROR: Too much recursion.
 		 */
 		var self = this;
-
+		
 		function vote () {
 			self.poll.songs[options.index].votes++;
 			self.songs[options.index].votes++;
 			self.songs[options.index].voters = self.poll.songs[options.index].voters;
 			self.updateVoteCountCache();
+
+			// get the current user's doc && update achievement progress
+			var userName = options.session.name;
+			var user;
+			self.database.link.openDoc(userName, {
+				success: function (data) {
+					user = data;
+					
+					// roll through achievements, only process vote type achievements
+					self.achievements.each(function(item,index){
+					
+						if(item.handler.event === 'vote'){
+
+							if(user.stats.achievements[item.value.name] && user.stats.achievements[item.value.name].achieved === false){
+								// check if we've achieved.  if so, notify
+								var check = item.handler.check(options);
+								
+								if(check === true){
+									
+									inspect("Achieved!");
+									
+									user.stats.achievements[item.value.name].achieved = true;
+
+									self.statusEmitter.emit('achievement', item, options.session.id);
+									
+								}
+								
+							}
+							
+						}
+					});
+					
+					// write back to couch
+					self.database.link.saveDoc(user,{
+						success: function(data){
+							//inspect(data);
+						}
+					});
+					
+				}
+			});
+			
 		}
 
 		if (options.session.name) {
@@ -581,7 +646,7 @@ get('/vote', function () {
 post('/vote', function () {
 	if (App.pollActive) {
 		var self = this;
-			
+		
 		// Vote!
 		App.vote({
 			index: self.param('index'),
@@ -599,7 +664,7 @@ get('/status', function () {
 	var self = this;
 	
 	self.contentType('json');
-
+	
 	var hollaback = function (stream) {
 		clearTimeout(timeout);
 		self.respond(200, JSON.encode(stream));
@@ -636,7 +701,7 @@ get('/rmi', function () {
 
 App.boot();
 
-function inspect(o) {
+global.inspect = function(o) {
 	var sys = require('sys');
-	sys.puts(sys.inspect(o));
+	sys.puts(sys.inspect(o,false,null));
 }
