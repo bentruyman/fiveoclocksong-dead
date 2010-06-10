@@ -41,7 +41,7 @@ var App = {
 			}
 		});
 	},
-	setupAchievementListener: function(){
+	setupAchievementListener: function () {
 		$("#achievement").hide();
 
 		this.registerStatusResponder('achievement', function (data) {
@@ -52,7 +52,7 @@ var App = {
 			}
 		});
 	},
-	setupStartPollResponder: function() {
+	setupStartPollResponder: function () {
 		this.registerStatusResponder('startPoll', function (data) {
 			// fade out site
 			$("#winner").animate({
@@ -237,17 +237,17 @@ var App = {
 			});
 		});
 	},
-	showAchievement: function(data){
+	showAchievement: function (data) {
 		
 		console.log("Achievement Unlocked!");
 		console.log(data);
 		
 		// populate achievement
 		
-		var cheevo = "<img src=\"/public/images/achievements/" + data.value.icon + "\" />";
+		var cheevo = "<img src=\"/public/images/achievements/" + data.icon + "\" />";
 		cheevo += "<div class=\"content\">";
-		cheevo += "<div class=\"title\">" + data.value.friendly_name + "</div>";
-		cheevo += "<div class=\"desc\">" + data.value.desc + "</div>";
+		cheevo += "<div class=\"title\">" + data.friendly_name + "</div>";
+		cheevo += "<div class=\"desc\">" + data.desc + "</div>";
 		cheevo += "</div>";
 		
 		$("#achievement").html(cheevo);

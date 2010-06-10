@@ -6,10 +6,12 @@ require('express/plugins');
 var dns = require('dns'),
 	events = require('events'),
 	sys = require('sys');
+
 var http = require('express/http'),
 	utils = require('express/utils');
 
 var couchdb = require('./lib/node-couch/lib').CouchDB;
+couchdb.debug = false;
 
 App = {
 	achievements: {},
@@ -21,16 +23,15 @@ App = {
 	 */
 	database: {
 		/**
-		 * The CouchDB client
-		 * @property client
-		 */
-		client: null,
-		/**
 		 * The interface into the CouchDB database
 		 * @property link
 		 */
 		link: null
 	},
+	/** 
+	 * @property eventEmitter
+	 */
+	eventEmitter: null,
 	/** 
 	 * The global interval that determines what state the application should be in
 	 * @property interval
@@ -112,12 +113,13 @@ App = {
 	 */
 	statusEmitter: {
 		listeners: [],
-		addListener: function (hollaback, sessionId) {
+		queue: {},
+		addListener: function (sessionId, hollaback) {
 			this.listeners.push({id: sessionId, callback: hollaback});
 		},
-		removeListener: function (type, hollaback) {
+		removeListener: function (hollaback, sessionId) {
 			this.listeners.forEach(function (item, index) {
-				if (item.callback === hollaback) {
+				if (item.id === sessionId) {
 					App.statusEmitter.listeners.splice(index, 1);
 				}
 			});
@@ -125,28 +127,36 @@ App = {
 		removeAllListeners: function () {
 			this.listeners = [];
 		},
-		emit: function (type, data, sessionId) {
-			var response = {
-				type: type,
-				data: data
-			};
-			
-			if(sessionId){
-				this.listeners.forEach(function (item) {
-				
-					if(sessionId === item.id){
+		emit: function (type, data, userName) {
+			var self = this,
+				response = {
+					type: type,
+					data: data
+				};
+
+			if (userName) {
+				var found = false;
+
+				self.listeners.forEach(function (item) {
+					if (userName === item.id) {
+						found = true;
 						item.callback.call(App, response);
+						self.removeListener(item.id);
 					}
 				});
-			
-				this.removeAllListeners();
-				
-			}else{
 
-				this.listeners.forEach(function (item) {
+				if (!found) {
+					inspect('QUEUE\'d');
+					if (typeof self.queue[userName] === 'undefined') {
+						self.queue[userName] = [];
+					}
+					self.queue[userName].push(response);
+				}
+			} else {
+				self.listeners.forEach(function (item) {
 					item.callback.call(App, response);
 				});
-				
+				self.removeAllListeners();
 			}
 			
 		}
@@ -167,6 +177,11 @@ App = {
 		var self = this,
 			sc = self.configuration,
 			uc = require('./config/base').configuration;
+
+		/**
+		 * Create the application event emitter
+		 */
+		self.eventEmitter = new events.EventEmitter();
 
 		/**
 		 * Parse the user's configuration into a more digestible for the
@@ -201,6 +216,8 @@ App = {
 		 */
 		self.database.link = couchdb.db(sc.database.name, 'http://' + sc.database.host + ':' + sc.database.port);
 
+		self.setupAchievements();
+
 		/**
 		 * Run the Express application
 		 */
@@ -224,24 +241,6 @@ App = {
 				self.startPoll();
 			}
 		}, self.configuration.timers.delay);
-		
-		
-		// get achievements from DB, parse config js for achievement conditions
-		self.database.link.view('achievements/by_name', {
-			descending: true,
-			success: function (data) {
-				self.achievements = data.rows;
-				
-				self.achievements.each(function(item,index){
-					
-					ach = require('./config/achievements/' + item.value.name);
-					self.achievements[index].handler = ach;
-					
-				});
-				
-			}
-		});
-		
 	},
 	createTodaysPoll: function (/* I aint no */ hollaback /* girl */) {
 		var self = this;
@@ -323,6 +322,17 @@ App = {
 			}
 		});
 	},
+	getAchievements: function (/* I aint no */ hollaback /* girl */) {
+		var self = this;
+
+		// get achievements from DB
+		self.database.link.view('achievements/by_name', {
+			descending: true,
+			success: function (data) {
+				hollaback.call(this, data.rows);
+			}
+		});
+	},
 	getLastPolls: function (/* I aint no */ hollaback /* girl */) {
 		/** 
 		 * Get the last %limit% polls, so we don't repeat songs within a week.
@@ -338,7 +348,7 @@ App = {
 				if (data.total_rows !== 0) {
 					var polls = data.rows;
 					hollaback.call(this, polls);
-				}else{
+				} else {
 					hollaback.call(this, false);
 				}
 
@@ -380,11 +390,28 @@ App = {
 			}
 		});
 	},
-	setPollTimers: function(today){
-		self = this;
+	setPollTimers: function (today) {
+		var self = this;
 		
 		self.pollStart = Date.parse( (today.getMonth() + 1) + "/" + (today.getDate() + 1) + "/" + today.getFullYear() + " " + self.configuration.timers.start.hour + ":" + self.configuration.timers.start.minutes);
 		self.pollEnd = Date.parse((today.getMonth() + 1) + "/" + today.getDate() + "/" + today.getFullYear() + " " + self.configuration.timers.end.hour + ":" + self.configuration.timers.end.minutes);
+	},
+	setupAchievements: function () {
+		var self = this;
+
+		self.getAchievements(function (achievements) {
+			self.achievements = {};
+
+			achievements.forEach(function (achievement) {
+				var cheev = achievement.value;
+				cheev.handler = require('./config/achievements/' + achievement.value.name);
+				self.achievements[cheev.name] = cheev;
+			});
+
+			for (var i in self.achievements) {
+				self.achievements[i].handler.init(new AchievementHandle(self.achievements[i].name));
+			}
+		});
 	},
 	startPoll: function () {
 		var self = this;
@@ -449,63 +476,60 @@ App = {
 		this.voteCount = newVoteCount;
 	},
 	vote: function (options) {
-		/**
-		 * TODO: This seems really unecessary. Refactor and try again, pal.
-		 * I'm not your pal, guy.
-		 * I'm not your guy, friend.
-		 * I'm not your friend, buddy.
-		 * I'm not your buddy, pal.
-		 * ERROR: Too much recursion.
-		 */
 		var self = this;
 		
 		function vote () {
+			/**
+			 * TODO: This seems really unecessary. Refactor and try again, pal.
+			 * I'm not your pal, guy.
+			 * I'm not your guy, friend.
+			 * I'm not your friend, buddy.
+			 * I'm not your buddy, pal.
+			 * ERROR: Too much recursion.
+			 */
 			self.poll.songs[options.index].votes++;
 			self.songs[options.index].votes++;
 			self.songs[options.index].voters = self.poll.songs[options.index].voters;
 			self.updateVoteCountCache();
 
-			// get the current user's doc && update achievement progress
-			var userName = options.session.name;
-			var user;
-			self.database.link.openDoc(userName, {
-				success: function (data) {
-					user = data;
-					
-					// roll through achievements, only process vote type achievements
-					self.achievements.each(function(item,index){
-					
-						if(item.handler.event === 'vote'){
+			var status = {
+				votes: [],
+				voters: []
+			};
 
-							if(user.stats.achievements[item.value.name] && user.stats.achievements[item.value.name].achieved === false){
-								// check if we've achieved.  if so, notify
-								var check = item.handler.check(options);
-								
-								if(check === true){
-									
-									inspect("Achieved!");
-									
-									user.stats.achievements[item.value.name].achieved = true;
+			self.songs.forEach(function (item) {
+				status.votes.push(item.votes);
+				status.voters.push(item.voters);
+			});
 
-									self.statusEmitter.emit('achievement', item, options.session.id);
-									
-								}
-								
-							}
-							
-						}
-					});
-					
-					// write back to couch
-					self.database.link.saveDoc(user,{
-						success: function(data){
-							//inspect(data);
-						}
-					});
-					
+			self.statusEmitter.emit('vote', status);
+
+			var voted = false;
+
+			self.poll.songs[options.index].voters.forEach(function (item) {
+				if (item.name == options.session.name) {
+					item.count++;
+					voted = true;
 				}
 			});
-			
+
+			if (self.poll.songs[options.index].voters.length === 0 || voted === false) {
+				self.poll.songs[options.index].voters.push({name: options.session.name, count: 1});
+			}
+
+			self.database.link.saveDoc(self.poll);
+
+			// get the current user's doc
+			var userName = options.session.name;
+			self.database.link.openDoc(userName, {
+				success: function (data) {
+					// Let everyone know a vote occurred
+					self.eventEmitter.emit('vote', {
+						song: self.songs[options.index].item,
+						user: data
+					});
+				}
+			});
 		}
 
 		if (options.session.name) {
@@ -518,7 +542,7 @@ App = {
 
 					// replace token with the actual max vote limit count
 					amazingRando = amazingRando.replace('%vl%',this.configuration.voteLimit);
-					this.statusEmitter.emit('maxVotes', amazingRando, options.session.id);
+					this.statusEmitter.emit('maxVotes', amazingRando, options.session.name);
 					return false;
 				} else {
 					// increment this person's vote
@@ -531,34 +555,7 @@ App = {
 				App.voters[options.session.name] = 1;
 				vote();
 			}
-			
-			var voted = false;
-
-			this.poll.songs[options.index].voters.forEach(function (item) {
-				if (item.name == options.session.name) {
-					item.count++;
-					voted = true;
-				}
-			});
-
-			if (this.poll.songs[options.index].voters.length === 0 || voted === false) {
-				this.poll.songs[options.index].voters.push({name: options.session.name, count: 1});
-			}
 		}
-
-		var status = {
-			votes: [],
-			voters: []
-		};
-
-		this.songs.forEach(function (item) {
-			status.votes.push(item.votes);
-			status.voters.push(item.voters);
-		});
-
-		this.statusEmitter.emit('vote', status);
-
-		this.database.link.saveDoc(this.poll);
 	}
 };
 
@@ -667,18 +664,22 @@ get('/status', function () {
 		self.respond(200, JSON.encode(stream));
 	};
 
-	App.statusEmitter.addListener(hollaback, self.session.id);
+	if (typeof App.statusEmitter.queue[self.session.name] !== 'undefined' && App.statusEmitter.queue[self.session.name].length > 0) {
+		var response = App.statusEmitter.queue[self.session.name].shift();
+		hollaback(response);
+	} else {
+		App.statusEmitter.addListener(self.session.name, hollaback);
 
-	var timeout = setTimeout(function () {
-		App.statusEmitter.removeListener('status', hollaback);
-		self.respond(200, JSON.encode({
-			type: 'ping',
-			data: {
-				message: App.pingMessages[Math.floor(Math.random() * App.pingMessages.length)]
-			}
-		}));
-	}, App.configuration.server.statusTimeout);
-	
+		var timeout = setTimeout(function () {
+			App.statusEmitter.removeListener('status', hollaback);
+			self.respond(200, JSON.encode({
+				type: 'ping',
+				data: {
+					message: App.pingMessages[Math.floor(Math.random() * App.pingMessages.length)]
+				}
+			}));
+		}, App.configuration.server.statusTimeout);
+	}
 });
 
 get('/*.css', function (file) {
@@ -695,6 +696,62 @@ get('/rmi', function () {
 		this.respond(530);
 	}
 });
+
+var AchievementHandle = function (name) {
+	this.name = name;
+};
+
+AchievementHandle.prototype.addListener = function (eventType, handler) {
+	App.eventEmitter.addListener(eventType, handler);
+};
+
+AchievementHandle.prototype.removeListener = function (eventType, handler) {
+	App.eventEmitter.removeListener(eventType, handler);
+};
+
+AchievementHandle.prototype.achieve = function (user) {
+	user = this.requiresStub(user);
+
+	user.stats.achievements[this.name].achieved = true;
+
+	App.database.link.saveDoc(user);
+
+	App.statusEmitter.emit('achievement', App.achievements[this.name], user._id);
+
+	return user;
+};
+
+AchievementHandle.prototype.isAchieved = function (user) {
+	user = this.requiresStub(user);
+
+	return user.stats.achievements[this.name].achieved;
+};
+
+AchievementHandle.prototype.getData = function (user, dataType) {
+	user = this.requiresStub(user);
+
+	return user.stats.achievements[this.name].data[dataType];
+};
+
+AchievementHandle.prototype.setData = function (user, dataType, value) {
+	user = this.requiresStub(user);
+	user.stats.achievements[this.name].data[dataType] = value;
+
+	App.database.link.saveDoc(user);
+
+	return user;
+};
+
+AchievementHandle.prototype.requiresStub = function (user) {
+	if (typeof user.stats.achievements[this.name] === 'undefined') {
+		user.stats.achievements[this.name] = {
+			achieved: false,
+			data: {}
+		}
+	}
+
+	return user;
+};
 
 App.boot();
 

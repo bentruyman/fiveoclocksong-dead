@@ -50,6 +50,30 @@ case 'install':
 
 	// Create the design documents
 	existencePromise.then(function () {
+		// Achievements
+		var achievementsPromise = new Promise();
+		db.saveDoc({
+			_id: '_design/achievements',
+			language: 'javascript',
+			views: {
+				by_name: {
+					map: function (doc) {
+						if (doc.type === 'achievement') {
+							emit(doc.friendly_name, doc);
+						}
+					}
+				}
+			}
+		}, {
+			error: function (error) {
+				sys.puts('Error while creating "achievements" view: ' + error.reason);
+			},
+			success: function (success) {
+				sys.puts('Created "achievements" view successfully.');
+				achievementsPromise.resolve();
+			}
+		});
+
 		// Polls
 		var pollsPromise = new Promise();
 		db.saveDoc({
@@ -98,8 +122,32 @@ case 'install':
 			}
 		});
 
+		// Users
+		var usersPromise = new Promise();
+		db.saveDoc({
+			_id: '_design/users',
+			language: 'javascript',
+			views: {
+				by_name: {
+					map: function (doc) {
+						if (doc.type === 'user') {
+							emit(doc.name, doc);
+						}
+					}
+				}
+			}
+		}, {
+			error: function (error) {
+				sys.puts('Error while creating "users" view: ' + error.reason);
+			},
+			success: function (success) {
+				sys.puts('Created "users" view successfully.');
+				usersPromise.resolve();
+			}
+		});
+
 		// Design Documents complete
-		all([pollsPromise, songsPromise]).then(function () {
+		all([achievementsPromise, pollsPromise, songsPromise, usersPromise]).then(function () {
 			sys.puts('Finished installing site. Enjoy!');
 		});
 	});

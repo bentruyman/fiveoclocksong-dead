@@ -1,38 +1,33 @@
-var session;
+var handle;
 
-exports.init = function(s){
-	
-	inspect('Test Achievement added');
-	
+exports.init = function (providedHandle) {
+	inspect('INITING!!');
+	handle = providedHandle;
+	handle.addListener('vote', check);
 };
 
-exports.event = 'vote';
+function check (payload) {
+	inspect('CHECKING!!');
 
-exports.check = function(options){
+	var songs = handle.getData(payload.user, 'songs');
 
-	inspect("check achievement: test");
-	//inspect(options);
+	if (!handle.isAchieved(payload.user)){
+		if (typeof songs === 'undefined') {
+			inspect('FIRST TIMER!!!');
+			songs = {};
+			songs[payload.song._id] = 1;
+			inspect(songs);
+			handle.setData(payload.user, 'songs', songs);
+		} else {
+			inspect('NOT YET!!!');
+			songs[payload.song._id]++;
+			handle.setData(payload.user, 'songs', songs);
 
-	//inspect(self.songs[options.index].voters);
-
-	var condition;
-	
-	self.songs[options.index].voters.forEach(function(item,i){
-		
-		if(item.name === options.session.name){
-			
-			if(item.count === 5){
-				condition = true;
-			}else{
-				condition = false;
+			if (songs[payload.song._id] === 5) {
+				inspect('ACHIEVED!!!');
+				handle.achieve(payload.user);
 			}
-			
 		}
-		
-	});
-	
-	return condition;
-	
-};
+	}
 
-
+}
