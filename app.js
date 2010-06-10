@@ -543,7 +543,27 @@ App = {
 
 					// replace token with the actual max vote limit count
 					amazingRando = amazingRando.replace('%vl%',this.configuration.voteLimit);
-					this.statusEmitter.emit('maxVotes', amazingRando, options.session.name);
+					//this.statusEmitter.emit('maxVotes', amazingRando, options.session.name);
+					
+					// TODO: feels like there could be a better way to do this maxVotes cheevo check
+					
+					// get the current user's doc
+					
+					var userName = options.session.name;
+					self.database.link.openDoc(userName, {
+						success: function (data) {
+							// Let everyone know a vote occurred
+							self.eventEmitter.emit('maxVotes', {
+								song: self.songs[options.index].item,
+								user: data,
+								poll: self.poll
+							});
+							
+							App.statusEmitter.emit('maxVotes', amazingRando, options.session.name)
+						}
+					});
+					
+					
 					return false;
 				} else {
 					// increment this person's vote

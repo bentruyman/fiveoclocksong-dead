@@ -17,7 +17,6 @@ function check (payload) {
 
 			songs = {};
 			songs[payload.song._id] = 1;
-			inspect(songs);
 			handle.setData(payload.user, 'songs', songs);
 
 		} 

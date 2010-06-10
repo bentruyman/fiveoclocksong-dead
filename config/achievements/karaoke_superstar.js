@@ -23,13 +23,10 @@ function check (payload) {
 
 			songs = {};
 			songs[payload.song._id] = 1;
-			inspect(songs);
 			handle.setData(payload.user, 'songs', songs);
 
 		} 
 		
-		inspect(ids);
-			
 		if(ids.indexOf(payload.song._id) !== -1){
 			handle.setData(payload.user, 'songs', songs);
 			handle.achieve(payload.user);

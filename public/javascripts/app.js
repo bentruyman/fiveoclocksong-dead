@@ -239,9 +239,6 @@ var App = {
 	},
 	showAchievement: function (data) {
 		
-		console.log("Achievement Unlocked!");
-		console.log(data);
-		
 		// populate achievement
 		
 		var cheevo = "<img src=\"/public/images/achievements/" + data.icon + "\" />";
@@ -254,13 +251,18 @@ var App = {
 		
 		var lPos = ($(window).width() - $("#achievement").width()) / 2;
 		
+		var chirp = document.getElementById("chirp");
+				
+		chirp.play();
+		
 		$("#achievement").css({
 			left: lPos,
 			bottom: "50px"
-		}).fadeIn(200);
+		}).slideDown(200);
 		
 		t = setTimeout(function(){
-			$("#achievement").fadeOut(100);
+			$("#achievement").slideUp(200);
+			chirp.load();
 		},2500);
 		
 		

@@ -6,9 +6,9 @@ config/*.js
 *.csv
 *.dat
 *.out
-*.mp3
+public/media/mp3/*.mp3
 *.m4a
-*.ogg
+public/media/ogg/*.ogg
 *.m4p
 *.wav
 *.supported

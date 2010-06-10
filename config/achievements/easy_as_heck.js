@@ -14,7 +14,6 @@ function check (payload) {
 		if (typeof songs === 'undefined') {
 			songs = {};
 			songs[payload.song._id] = 1;
-			inspect(songs);
 			handle.setData(payload.user, 'songs', songs);
 		} else {
 			songs[payload.song._id]++;
