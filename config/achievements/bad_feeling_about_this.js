@@ -1,20 +1,14 @@
 var handle;
 
 exports.init = function (providedHandle) {
-	inspect('karaoke superstar added');
+	inspect('bad feeling about this added');
 	handle = providedHandle;
 	handle.addListener('vote', check);
 };
 
 function check (payload) {
 	
-	var ids = [
-		'0251f83e1528d7fa43d32e0cdd409df9',
-		'29f22dd88eed67ed53c5aaf28d1c4da2',
-		'2bb5a4800807a5bb18d14b054a9c5db3',
-		'3b33dee83c039d0e9562bf5c9d865f36',
-		'45b8ed1e79ea7bbf03601feaf310b997'
-	];
+	var ids = ['cd401986786dab137e71c1daa1b31d18','ac49033dad50061d36fc16ed4e5ce7b0'];
 	var songs = handle.getData(payload.user, 'songs');
 
 	if (!handle.isAchieved(payload.user)){
@@ -27,8 +21,6 @@ function check (payload) {
 			handle.setData(payload.user, 'songs', songs);
 
 		} 
-		
-		inspect(ids);
 			
 		if(ids.indexOf(payload.song._id) !== -1){
 			handle.setData(payload.user, 'songs', songs);

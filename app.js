@@ -526,7 +526,8 @@ App = {
 					// Let everyone know a vote occurred
 					self.eventEmitter.emit('vote', {
 						song: self.songs[options.index].item,
-						user: data
+						user: data,
+						poll: self.poll
 					});
 				}
 			});
