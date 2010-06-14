@@ -270,8 +270,10 @@ var App = {
 		t = setTimeout(function(){
 			$("#achievement").slideUp(200);
 			chirp.load();
-		},2500);
+		},4500);
 		
+		// update badges with unlocked achievement
+		$("#ach-" + data.name).attr("src","/public/images/achievements/" + data.icon);
 		
 	}
 };

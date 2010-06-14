@@ -524,10 +524,15 @@ App = {
 			self.database.link.openDoc(userName, {
 				success: function (data) {
 					// Let everyone know a vote occurred
+
+					// parse out the current time for checking early bird achievement
+					var cTime = Date.parse(new Date());
+					
 					self.eventEmitter.emit('vote', {
 						song: self.songs[options.index].item,
 						user: data,
-						poll: self.poll
+						poll: self.poll,
+						time: cTime
 					});
 				}
 			});
@@ -631,18 +636,14 @@ get('/vote', function () {
 				
 				App.database.link.openDoc(self.session.name, {
 					success: function (user) {
-						
-						
 						data.rows.forEach(function(item,i){
-							
 							if(user.stats.achievements[item.value.name]){
 								if(user.stats.achievements[item.value.name].achieved !== true){
-									
 									item.value.icon = 'locked.png';
-									
 								}
+							}else{
+								item.value.icon = 'locked.png';
 							}
-														
 						});
 						
 						self.render('vote.html.haml', {
