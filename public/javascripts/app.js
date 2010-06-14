@@ -240,7 +240,6 @@ var App = {
 	showAchievement: function (data) {
 		
 		// populate achievement
-		
 		var cheevo = "<img src=\"/public/images/achievements/" + data.icon + "\" />";
 		cheevo += "<div class=\"content\">";
 		cheevo += "<div class=\"title\">" + data.friendly_name + "</div>";
