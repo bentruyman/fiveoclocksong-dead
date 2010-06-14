@@ -1,3 +1,6 @@
 %ul#songs
   != this.partial('song.html.haml', { collection: songs })
-  
+%div#userInfo
+  %span= "Welcome, " + user.nickName + "!"
+  %ul#achievements
+    != this.partial('achievement.html.haml', { collection: achievements, locals: {user: user} })

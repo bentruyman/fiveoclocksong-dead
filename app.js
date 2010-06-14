@@ -624,11 +624,41 @@ get('/vote', function () {
 	var self = this;
 
 	if (App.pollActive) {
-		self.render('vote.html.haml', {
-			locals: {
-				songs: App.songs
+
+
+		App.database.link.view('achievements/by_name', {
+			success: function (data) {
+				
+				App.database.link.openDoc(self.session.name, {
+					success: function (user) {
+						
+						
+						data.rows.forEach(function(item,i){
+							
+							if(user.stats.achievements[item.value.name]){
+								if(user.stats.achievements[item.value.name].achieved !== true){
+									
+									item.value.icon = 'locked.png';
+									
+								}
+							}
+														
+						});
+						
+						self.render('vote.html.haml', {
+							locals: {
+								songs: App.songs,
+								achievements: data.rows,
+								user: user
+							}
+						});
+						
+					}
+				});
+
 			}
 		});
+
 	} else {
 		// get winner's name and vote count
 		 var wIndex = 0, wCount = 0;

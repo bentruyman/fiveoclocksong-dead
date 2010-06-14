@@ -42,8 +42,16 @@ var App = {
 		});
 	},
 	setupAchievementListener: function () {
-		$("#achievement").hide();
-
+		$("#achievement, #achievements").hide();
+		
+		$("#userInfo").click(function(){
+			if($("#achievements").css('display') === 'block'){
+				$("#achievements").hide(400);
+			}else{
+				$("#achievements").show(400);
+			}
+		});
+		
 		this.registerStatusResponder('achievement', function (data) {
 			try {
 				this.showAchievement(data);
