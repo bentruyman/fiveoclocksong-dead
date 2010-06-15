@@ -640,9 +640,11 @@ get('/vote', function () {
 							if(user.stats.achievements[item.value.name]){
 								if(user.stats.achievements[item.value.name].achieved !== true){
 									item.value.icon = 'locked.png';
+									item.value.desc = 'Achievement Locked';
 								}
 							}else{
 								item.value.icon = 'locked.png';
+								item.value.desc = 'Achievement Locked';
 							}
 						});
 						
@@ -736,6 +738,23 @@ get('/status', function () {
 
 get('/*.css', function (file) {
 	this.render(file + '.css.sass', { layout: false });
+});
+
+get('/achieve', function(){
+	var self = this;
+	
+	var userName = self.session.name;
+	App.database.link.openDoc(userName, {
+		success: function (data) {
+			
+			App.eventEmitter.emit('front', {
+				element: self.params.get.element,
+				user: data
+			});	
+
+		}
+	});
+		
 });
 
 get('/rmi', function () {

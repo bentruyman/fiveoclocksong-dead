@@ -1,14 +1,17 @@
 var App = {
 	statusResponders: {},
+	konamiPattern: "3838404037393739666513",
+	konamiInput: "",
+	timeout: null,
 	boot: function () {
 		this.setupPingResponder();
-		this.setupAchievementListener();
+		this.setupAchievementListeners();
 		this.setupPreviewPlayer();
 		this.setupVoteResponder();
 		this.setupStopPollResponder();
 		this.setupStartPollResponder();
 		this.setupMaxVotesResponder();
-
+		
 		this.poll();
 	},
 	poll:  function () {
@@ -35,13 +38,14 @@ var App = {
 	setupPingResponder: function () {
 		this.registerStatusResponder('ping', function (data) {
 			try {
-				console.log(data.message);
+				//console.log(data.message);
 			} catch (e) {
 				// You ain't got no console
 			}
 		});
 	},
-	setupAchievementListener: function () {
+	setupAchievementListeners: function () {
+		// setup badges window
 		$("#achievement, #achievements").hide();
 		
 		$("#userInfo").click(function(){
@@ -51,13 +55,102 @@ var App = {
 				$("#achievements").show(400);
 			}
 		});
-		
+
+		// setup front side achievements listeners
+		$(document).keydown(this.checkAchievement);
+		$(document).click(this.checkAchievement);
+
 		this.registerStatusResponder('achievement', function (data) {
 			try {
 				this.showAchievement(data);
 			} catch (e) {
 				// You ain't got no achievement
 			}
+		});
+	},
+	checkAchievement: function(ev){
+		if(ev.keyCode !== 0){
+			// key was pressed
+			clearTimeout(App.timeout);
+
+			// check for konami code
+			App.konamiInput += ev.keyCode;
+			
+			if(App.konamiPattern === App.konamiInput){
+				App.konamiInput = "";
+				
+				var opts = {
+					element: "30_MANS"
+				};
+				
+				App.sendAchievement(opts);
+				
+			}else if(App.konamiPattern.indexOf(App.konamiInput) === -1){
+				App.konamiInput = "";
+			}
+			
+			App.timeout = setTimeout(function(){
+				App.konamiInput = "";
+			},2500);
+			
+		}else{
+		
+			var hook = ev.originalEvent.srcElement.id;
+			
+			if(!hook){
+				hook = ev.originalEvent.srcElement.className;
+			}
+			
+			if(!hook){
+				hook = ev.originalEvent.srcElement.offsetParent.className;
+			}
+			
+			// elements to check against - ids and classNames here
+			var classHooks = ['logo','creator','powered','unicorns','play_pause box'];
+			
+			if(classHooks.indexOf(hook) !== -1){
+
+				switch(hook){
+					case 'logo':
+					
+					break;
+					case 'creator':
+					
+					break;
+					case 'powered':
+					
+					break;
+					case 'unicorns':
+						var ff = $("#logo").css('fontFamily');
+						if(ff.indexOf('Comic Sans MS') !== -1){
+							var opts = {
+								element: hook
+							};
+						}
+					break;
+					case 'play_pause box':
+					
+					break;
+					default:
+					
+					break;
+				}
+
+				if(opts){
+					
+					App.sendAchievement(opts);
+
+				}
+
+
+				
+			}
+		}
+		
+	},
+	sendAchievement: function(opts){
+		$.getJSON('/achieve', opts, function (response) {
+			console.log(response);
 		});
 	},
 	setupStartPollResponder: function () {
@@ -273,7 +366,10 @@ var App = {
 		},4500);
 		
 		// update badges with unlocked achievement
+		var hover = data.friendly_name + "\n\n" + data.desc;
 		$("#ach-" + data.name).attr("src","/public/images/achievements/" + data.icon);
+		$("#ach-" + data.name).attr("alt",hover);
+		$("#ach-" + data.name).attr("title",hover);
 		
 	}
 };
