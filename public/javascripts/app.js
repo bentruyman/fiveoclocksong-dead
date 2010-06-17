@@ -12,6 +12,8 @@ var App = {
 		this.setupStartPollResponder();
 		this.setupMaxVotesResponder();
 		
+		$("#footer a").attr("target","_blank");
+		
 		this.poll();
 	},
 	poll:  function () {
@@ -94,7 +96,7 @@ var App = {
 			},2500);
 			
 		}else{
-		
+			// click event
 			var hook = ev.originalEvent.srcElement.id;
 			
 			if(!hook){
@@ -106,19 +108,28 @@ var App = {
 			}
 			
 			// elements to check against - ids and classNames here
-			var classHooks = ['logo','creator','powered','unicorns','play_pause box'];
-			
+			var classHooks = ['creator','powered','unicorns','play_pause box'];
+
 			if(classHooks.indexOf(hook) !== -1){
 
 				switch(hook){
 					case 'logo':
-					
+						ev.preventDefault;
+						var opts = {
+							element: 'recursion'
+						};
 					break;
 					case 'creator':
-					
+						var dude = ev.originalEvent.srcElement.text;
+						var opts = {
+							element: dude
+						};
 					break;
 					case 'powered':
-					
+						var site = ev.originalEvent.srcElement.text;
+						var opts = {
+							element: site
+						};
 					break;
 					case 'unicorns':
 						var ff = $("#logo").css('fontFamily');
@@ -327,7 +338,7 @@ var App = {
 					} else {
 						$votes.text(newValue);
 					}
-
+					
 					// Update Voters
 					var html = '';
 					for (var i = 0, j = data.voters[index].length; i < j; i++) {

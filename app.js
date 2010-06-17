@@ -637,7 +637,7 @@ get('/vote', function () {
 				App.database.link.openDoc(self.session.name, {
 					success: function (user) {
 						data.rows.forEach(function(item,i){
-							if(user.stats.achievements[item.value.name]){
+							if(user.stats.achievements && user.stats.achievements[item.value.name]){
 								if(user.stats.achievements[item.value.name].achieved !== true){
 									item.value.icon = 'locked.png';
 									item.value.desc = 'Achievement Locked';
