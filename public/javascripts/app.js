@@ -350,7 +350,6 @@ var App = {
 		});
 	},
 	showAchievement: function (data) {
-		
 		// populate achievement
 		var cheevo = "<img src=\"/public/images/achievements/" + data.icon + "\" />";
 		cheevo += "<div class=\"content\">";

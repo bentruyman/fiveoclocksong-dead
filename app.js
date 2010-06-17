@@ -502,8 +502,6 @@ App = {
 				status.voters.push(item.voters);
 			});
 
-			self.statusEmitter.emit('vote', status);
-
 			var voted = false;
 
 			self.poll.songs[options.index].voters.forEach(function (item) {
@@ -517,6 +515,8 @@ App = {
 				self.poll.songs[options.index].voters.push({name: options.session.name, count: 1});
 			}
 
+			self.statusEmitter.emit('vote', status);
+
 			self.database.link.saveDoc(self.poll);
 
 			// get the current user's doc
@@ -525,7 +525,7 @@ App = {
 				success: function (data) {
 					// Let everyone know a vote occurred
 
-					// parse out the current time for checking early bird achievement
+					// parse out the current time for checking time-based achievements
 					var cTime = Date.parse(new Date());
 					
 					self.eventEmitter.emit('vote', {
